@@ -1,4 +1,3 @@
-[index.html](https://github.com/user-attachments/files/31399111/index.html)
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -34,7 +33,7 @@
     </div>
   </div>
 
-  <!-- 게스트 추가 모달 (초대자 선택 필드 추가) -->
+  <!-- 게스트 추가 모달 -->
   <div id="guestModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl max-w-xs w-full p-5 border border-slate-100">
       <div class="flex justify-between items-center mb-3">
@@ -55,7 +54,6 @@
           <label class="block text-[11px] font-semibold text-slate-600 mb-1">초대한 회원 (같은 팀 배치)</label>
           <select id="gInviter" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             <option value="">없음 (독립 배치)</option>
-            <!-- 정기 회원 목록이 스크립트로 자동 채워집니다 -->
           </select>
         </div>
         <div>
@@ -97,14 +95,15 @@
           <h1 class="text-base sm:text-xl font-bold flex items-center gap-2">
             <i class="fa-solid fa-basketball text-orange-500"></i> AM8 Team Balancer
           </h1>
-          <p class="text-indigo-200 text-[11px] sm:text-xs mt-0.5">5v5 포지션 / 평균키 / 평균체중 / 평균출생 종합 밸런서</p>
+          <p class="text-indigo-200 text-[11px] sm:text-xs mt-0.5">5v5 포지션 / 평균키 / 평균체중 / 평균나이 종합 밸런서</p>
         </div>
         <div class="flex items-center gap-2">
-          <div id="dbStatus" class="bg-indigo-800 px-2 py-1 rounded-lg text-[10px] font-semibold border border-indigo-700">
+          <div id="dbStatus" class="bg-indigo-800 px-2 py-1 rounded-lg text-[10px] font-semibold border border-indigo-700 whitespace-nowrap">
             DB 연결 확인 중...
           </div>
-          <div id="selectedCount" class="bg-indigo-800 px-3 py-1 rounded-lg font-bold text-orange-400 border border-indigo-700 text-xs sm:text-sm">
-          선택: 0명
+          <div id="selectedCount" class="bg-indigo-800 px-3 py-1 rounded-lg font-bold text-orange-400 border border-indigo-700 text-xs sm:text-sm whitespace-nowrap">
+            선택: 0명
+          </div>
         </div>
       </div>
     </header>
@@ -113,19 +112,19 @@
 
       <!-- Left Section: Member Selection -->
       <section class="lg:col-span-1 bg-white p-3.5 sm:p-4 rounded-xl shadow-sm border border-slate-200">
-        <div class="flex justify-between items-center mb-2.5">
-          <h2 class="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
+        <div class="flex justify-between items-center gap-1 mb-2.5 flex-wrap sm:flex-nowrap">
+          <h2 class="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-1.5 whitespace-nowrap shrink-0">
             <i class="fa-solid fa-users text-indigo-600"></i> 참석자 선택
           </h2>
-          <div class="flex items-center gap-1">
-            <button onclick="toggleGuestModal(true)" class="text-[11px] bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-bold px-2 py-0.5 rounded border border-indigo-200 transition">
+          <div class="flex items-center gap-1 overflow-x-auto">
+            <button onclick="toggleGuestModal(true)" class="text-[11px] bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-bold px-1.5 py-0.5 rounded border border-indigo-200 transition whitespace-nowrap shrink-0">
               + 게스트
             </button>
-            <button onclick="loadMembersFromDB()" class="text-[11px] bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded border border-emerald-200 transition">
+            <button onclick="loadMembersFromDB()" class="text-[11px] bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded border border-emerald-200 transition whitespace-nowrap shrink-0">
               ↻ DB 새로고침
             </button>
-            <button onclick="selectAll(true)" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-0.5 rounded">전체선택</button>
-            <button onclick="selectAll(false)" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-0.5 rounded">초기화</button>
+            <button onclick="selectAll(true)" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded whitespace-nowrap shrink-0">전체선택</button>
+            <button onclick="selectAll(false)" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded whitespace-nowrap shrink-0">초기화</button>
           </div>
         </div>
 
@@ -153,7 +152,7 @@
               <option value="4">4개 팀</option>
             </select>
           </div>
-          <button onclick="copyResultsText()" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg flex items-center justify-center gap-2 transition">
+          <button onclick="copyResultsText()" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg flex items-center justify-center gap-2 transition whitespace-nowrap">
             <i class="fa-regular fa-copy"></i> 카톡 공유용 복사
           </button>
         </div>
@@ -171,6 +170,8 @@
   </div>
 
   <script>
+    const currentYear = new Date().getFullYear(); // 나이 계산용 현재 연도
+
     function handleAuth(e) {
       e.preventDefault();
       const input = document.getElementById('passwordInput').value;
@@ -189,19 +190,11 @@
       { name: 'D팀 (그린)', headerBg: 'bg-emerald-600 text-white', tagBg: 'bg-emerald-500 text-white' }
     ];
 
-    // ============================================================
-    // Supabase 설정
-    // 1) Supabase 프로젝트 생성 후 Project URL / anon key를 입력하세요.
-    // 2) 아래 두 값은 Supabase의 Project Settings > API에서 확인합니다.
-    // ============================================================
     const SUPABASE_URL = 'https://irisxcbqujeddcxyiwth.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_X6bhUcNITSlgAHIyb0hMWw_HiVYUYdF';
 
     let supabaseClient = null;
-
-    // DB에서 불러온 회원/게스트가 들어가는 배열
     let am8Members = [];
-
     let selectedPlayerIds = new Set();
     let currentGeneratedTeams = [];
     let guestCounter = 1000;
@@ -235,7 +228,7 @@
       if (!el) return;
       el.innerText = text;
       el.className =
-        'px-2 py-1 rounded-lg text-[10px] font-semibold border ' +
+        'px-2 py-1 rounded-lg text-[10px] font-semibold border whitespace-nowrap ' +
         (type === 'ok'
           ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
           : type === 'warn'
@@ -243,7 +236,6 @@
           : 'bg-red-100 text-red-700 border-red-200');
     }
 
-    // Supabase members 테이블에서 회원/게스트 전체를 가져옵니다.
     async function loadMembersFromDB() {
       if (!supabaseClient) return;
 
@@ -349,7 +341,6 @@
       am8Members.unshift(guestObj);
       selectedPlayerIds.add(guestObj.id);
 
-      // 초대 회원도 같이 자동으로 선택 체크
       if (inviterId) {
         selectedPlayerIds.add(inviterId);
       }
@@ -376,8 +367,8 @@
           ? 'bg-amber-500 text-white border-amber-600 font-bold' 
           : 'bg-slate-100 text-slate-400 border-slate-200 hover:bg-slate-200';
 
-        const inviterTag = m.inviterName ? `<span class="text-[9px] bg-purple-100 text-purple-700 font-bold px-1 rounded shrink-0">게스트(${m.inviterName})</span>` :
-                           (m.isGuest ? '<span class="text-[9px] bg-purple-100 text-purple-700 font-bold px-1 rounded shrink-0">게스트</span>' : '');
+        const inviterTag = m.inviterName ? `<span class="text-[9px] bg-purple-100 text-purple-700 font-bold px-1 rounded shrink-0 whitespace-nowrap">게스트(${m.inviterName})</span>` :
+                           (m.isGuest ? '<span class="text-[9px] bg-purple-100 text-purple-700 font-bold px-1 rounded shrink-0 whitespace-nowrap">게스트</span>' : '');
 
         return `
           <div class="flex items-center justify-between p-1.5 rounded-lg border border-slate-200 transition ${isChecked ? 'bg-indigo-50/60 border-indigo-300' : 'bg-white'}">
@@ -385,12 +376,12 @@
               <input type="checkbox" onchange="togglePlayer(${m.id})" ${isChecked ? 'checked' : ''} class="w-3.5 h-3.5 text-indigo-600 rounded focus:ring-indigo-500 shrink-0">
               <span class="font-bold text-slate-800 text-xs truncate shrink-0">${m.name}</span>
               ${inviterTag}
-              <span class="text-[10px] ${posColor} px-1 py-0.2 rounded font-semibold shrink-0">${m.position}</span>
+              <span class="text-[10px] ${posColor} px-1 py-0.2 rounded font-semibold shrink-0 whitespace-nowrap">${m.position}</span>
               <span class="text-[10px] text-slate-400 truncate hidden sm:inline ml-0.5">${m.height}cm/${m.weight}kg</span>
             </label>
             
             <div class="flex items-center gap-1 shrink-0 ml-1">
-              <button onclick="toggleExempt(${m.id})" class="text-[10px] px-1.5 py-0.5 rounded border transition ${exemptBtnClass}">
+              <button onclick="toggleExempt(${m.id})" class="text-[10px] px-1.5 py-0.5 rounded border transition whitespace-nowrap ${exemptBtnClass}">
                 ${m.exempt ? '☕면제' : '내기'}
               </button>
             </div>
@@ -452,7 +443,6 @@
       document.getElementById('selectedCount').innerText = `선택: ${selectedPlayerIds.size}명`;
     }
 
-    // 게스트-초대자 동시 분배 로직 적용 팀 생성
     function generateTeams() {
       const selectedPlayers = am8Members.filter(m => selectedPlayerIds.has(m.id));
       
@@ -485,13 +475,11 @@
 
       let remainingPlayers = [...selectedPlayers];
       
-      // 1. 게스트 & 초대 회원 한 쌍(Pair) 우선 묶음 처리
       const pairedGuestIds = new Set();
       remainingPlayers.forEach(p => {
         if (p.isGuest && p.inviterId && !pairedGuestIds.has(p.id)) {
           const inviter = remainingPlayers.find(m => m.id === p.inviterId);
           if (inviter) {
-            // 인원이 가장 적은 팀에 두 명을 우선 배치
             teams.sort((a, b) => a.players.length - b.players.length);
             teams[0].players.push(p);
             teams[0].players.push(inviter);
@@ -501,10 +489,8 @@
         }
       });
 
-      // 쌍으로 이미 팀 배치된 인원 제거
       remainingPlayers = remainingPlayers.filter(p => !pairedGuestIds.has(p.id));
 
-      // 2. 남은 일반 개인 참석자들을 포지션별/키순 균등 분배
       const bigmen = remainingPlayers.filter(p => p.position === '빅맨').sort((a,b) => b.height - a.height);
       const handlers = remainingPlayers.filter(p => p.position === '핸들러').sort((a,b) => b.height - a.height);
       const wingmen = remainingPlayers.filter(p => p.position === '윙맨').sort((a,b) => b.height - a.height);
@@ -527,7 +513,6 @@
       renderTeamResults(teams);
     }
 
-    // 게스트-초대자 관계 유지하며 밸런스 최적화
     function optimizeTeamBalance(teams, pairedGuestIds) {
       let bestTeams = JSON.parse(JSON.stringify(teams));
       let minCost = calculateCost(bestTeams);
@@ -545,7 +530,6 @@
         let p1 = teams[t1].players[p1Idx];
         let p2 = teams[t2].players[p2Idx];
 
-        // 묶인 게스트/초대자는 서로 교환하지 않도록 보호 (팀 동반 유지)
         if (pairedGuestIds.has(p1.id) || pairedGuestIds.has(p2.id)) continue;
 
         if (p1 && p2 && p1.position === p2.position) {
@@ -568,18 +552,25 @@
     function calculateCost(teams) {
       const avgHeights = teams.map(t => getAvg(t.players, 'height'));
       const avgWeights = teams.map(t => getAvg(t.players, 'weight'));
-      const avgBirthYears = teams.map(t => getAvg(t.players, 'birthYear'));
+      const avgAges = teams.map(t => getAvgAge(t.players));
 
       const heightStdDev = getStdDev(avgHeights);
       const weightStdDev = getStdDev(avgWeights);
-      const birthYearStdDev = getStdDev(avgBirthYears);
+      const ageStdDev = getStdDev(avgAges);
 
-      return (heightStdDev * 2) + weightStdDev + (birthYearStdDev * 1.5);
+      return (heightStdDev * 2) + weightStdDev + (ageStdDev * 1.5);
     }
 
     function getAvg(arr, prop) {
       if (arr.length === 0) return 0;
       return arr.reduce((acc, cur) => acc + cur[prop], 0) / arr.length;
+    }
+
+    // 평균 나이 계산 함수 (현재 연도 - 출생연도 + 1)
+    function getAvgAge(arr) {
+      if (arr.length === 0) return 0;
+      const totalAge = arr.reduce((acc, cur) => acc + (currentYear - cur.birthYear + 1), 0);
+      return totalAge / arr.length;
     }
 
     function getStdDev(arr) {
@@ -592,7 +583,7 @@
       container.innerHTML = teams.map(t => {
         const avgH = getAvg(t.players, 'height').toFixed(1);
         const avgW = getAvg(t.players, 'weight').toFixed(1);
-        const avgYear = getAvg(t.players, 'birthYear').toFixed(1);
+        const avgAge = getAvgAge(t.players).toFixed(1);
 
         const hCount = t.players.filter(p => p.position === '핸들러').length;
         const wCount = t.players.filter(p => p.position === '윙맨').length;
@@ -606,10 +597,10 @@
                   ${t.name} <span class="text-[10px] ${t.tagBg} px-1.5 py-0.2 rounded-full font-normal">${t.players.length}명</span>
                 </h3>
               </div>
-              <div class="text-[10px] space-x-1 opacity-90 mt-0.5">
-                <span>평균키 <strong>${avgH}</strong></span>
-                <span>/ 평균체중 <strong>${avgW}</strong></span>
-                <span>/ 평균출생 <strong>${avgYear}</strong></span>
+              <div class="text-[10px] space-x-1 opacity-90 mt-0.5 whitespace-nowrap">
+                <span>평균키 <strong>${avgH}cm</strong></span>
+                <span>/ 평균체중 <strong>${avgW}kg</strong></span>
+                <span>/ 평균나이 <strong>${avgAge}세</strong></span>
               </div>
             </div>
 
@@ -624,16 +615,16 @@
                 const badge = p.position === '빅맨' ? 'bg-red-100 text-red-700' :
                              p.position === '핸들러' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700';
                 
-                const guestBadge = p.inviterName ? `<span class="text-[9px] bg-purple-100 text-purple-700 font-bold px-1 rounded shrink-0">게스트(${p.inviterName})</span>` :
-                                   (p.isGuest ? '<span class="text-[9px] bg-purple-100 text-purple-700 font-bold px-1 rounded shrink-0">게스트</span>' : '');
+                const guestBadge = p.inviterName ? `<span class="text-[9px] bg-purple-100 text-purple-700 font-bold px-1 rounded shrink-0 whitespace-nowrap">게스트(${p.inviterName})</span>` :
+                                   (p.isGuest ? '<span class="text-[9px] bg-purple-100 text-purple-700 font-bold px-1 rounded shrink-0 whitespace-nowrap">게스트</span>' : '');
 
                 return `
                   <li class="pt-1 flex justify-between items-center text-xs">
                     <div class="flex items-center gap-1.5 min-w-0">
                       <span class="font-bold text-slate-800 shrink-0">${p.name}</span>
                       ${guestBadge}
-                      <span class="text-[10px] ${badge} px-1 py-0.2 rounded font-semibold shrink-0">${p.position}</span>
-                      ${p.exempt ? '<span class="text-[9px] bg-amber-100 text-amber-800 px-1 py-0.2 rounded font-semibold shrink-0">☕면제</span>' : ''}
+                      <span class="text-[10px] ${badge} px-1 py-0.2 rounded font-semibold shrink-0 whitespace-nowrap">${p.position}</span>
+                      ${p.exempt ? '<span class="text-[9px] bg-amber-100 text-amber-800 px-1 py-0.2 rounded font-semibold shrink-0 whitespace-nowrap">☕면제</span>' : ''}
                     </div>
                   </li>
                 `;
@@ -655,9 +646,9 @@
       currentGeneratedTeams.forEach(t => {
         const avgH = getAvg(t.players, 'height').toFixed(1);
         const avgW = getAvg(t.players, 'weight').toFixed(1);
-        const avgYear = getAvg(t.players, 'birthYear').toFixed(1);
+        const avgAge = getAvgAge(t.players).toFixed(1);
 
-        text += `[ ${t.name} ] (${t.players.length}명 / 평균키 ${avgH}cm / 평균체중 ${avgW}kg / 평균출생 ${avgYear}년생)\n`;
+        text += `[ ${t.name} ] (${t.players.length}명 / 평균키 ${avgH}cm / 평균체중 ${avgW}kg / 평균나이 ${avgAge}세)\n`;
         t.players.forEach(p => {
           const guestTag = p.inviterName ? `(게스트 - ${p.inviterName} 동반) ` : (p.isGuest ? '(게스트) ' : '');
           const exemptText = p.exempt ? ' [☕커피내기 면제]' : '';
@@ -672,12 +663,6 @@
         alert("복사에 실패했습니다.");
       });
     }
-    // ============================================================
-    // 참고:
-    // - 팀 생성 자체는 기존 코드 그대로 브라우저에서 실행됩니다.
-    // - 회원/게스트 정보는 Supabase members 테이블에서 읽고 저장합니다.
-    // - 다음 단계에서 참석 기록/팀 편성 기록도 별도 테이블로 확장할 수 있습니다.
-    // ============================================================
   </script>
 </body>
 </html>
