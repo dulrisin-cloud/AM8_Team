@@ -87,71 +87,6 @@
     </div>
   </div>
 
-  <!-- 신규 회원 추가 모달 -->
-  <div id="memberModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl max-w-xs w-full p-5 border border-slate-100">
-      <div class="flex justify-between items-center mb-3">
-        <h3 class="text-base font-bold text-slate-800 flex items-center gap-1.5">
-          <i class="fa-solid fa-user-plus text-emerald-600"></i> 정회원 추가
-        </h3>
-        <button onclick="toggleMemberModal(false)" class="text-slate-400 hover:text-slate-600 text-sm">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-      
-      <form onsubmit="handleAddMember(event)" class="space-y-2.5">
-        <div>
-          <label class="block text-[11px] font-semibold text-slate-600 mb-1">이름 / 닉네임</label>
-          <input type="text" id="mName" required placeholder="예: 홍길동" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-        </div>
-        <div>
-          <label class="block text-[11px] font-semibold text-slate-600 mb-1">포지션</label>
-          <select id="mPosition" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-            <option value="핸들러">핸들러</option>
-            <option value="윙맨">윙맨</option>
-            <option value="빅맨">빅맨</option>
-          </select>
-        </div>
-        <div class="grid grid-cols-3 gap-2">
-          <div>
-            <label class="block text-[11px] font-semibold text-slate-600 mb-1">키(cm)</label>
-            <input type="number" id="mHeight" required placeholder="178" class="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs text-center focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-          </div>
-          <div>
-            <label class="block text-[11px] font-semibold text-slate-600 mb-1">체중(kg)</label>
-            <input type="number" id="mWeight" required placeholder="75" class="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs text-center focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-          </div>
-          <div>
-            <label class="block text-[11px] font-semibold text-slate-600 mb-1">출생(연도)</label>
-            <input type="number" id="mBirth" required placeholder="1992" class="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs text-center focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-          </div>
-        </div>
-        
-        <div class="pt-2 flex gap-2">
-          <button type="button" onclick="toggleMemberModal(false)" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2 rounded-lg text-xs transition">취소</button>
-          <button type="submit" class="w-1/2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-xs transition shadow-md">회원 등록</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- 최근 생성 팀 5개 히스토리 모달 -->
-  <div id="historyModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full p-5 border border-slate-100 max-h-[85vh] flex flex-col">
-      <div class="flex justify-between items-center mb-3 shrink-0">
-        <h3 class="text-base font-bold text-slate-800 flex items-center gap-1.5">
-          <i class="fa-solid fa-clock-rotate-left text-indigo-600"></i> 최근팀 기록 (최대 5개)
-        </h3>
-        <button onclick="toggleHistoryModal(false)" class="text-slate-400 hover:text-slate-600 text-sm">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-      
-      <div id="historyList" class="overflow-y-auto space-y-4 pr-1 flex-1">
-      </div>
-    </div>
-  </div>
-
   <!-- 메인 콘텐트 -->
   <div id="appContent" class="hidden">
     <header class="bg-indigo-900 text-white py-3 shadow-md sticky top-0 z-40">
@@ -160,13 +95,13 @@
           <h1 class="text-base sm:text-xl font-bold flex items-center gap-2">
             <i class="fa-solid fa-basketball text-orange-500"></i> AM8 Team Balancer
           </h1>
-          <p class="text-indigo-200 text-[11px] sm:text-xs mt-0.5">5v5 포지션 / 평균키 / 평균체중 / 평균나이 종합 밸런서</p>
+          <p class="text-indigo-200 text-[11px] sm:text-xs mt-0.5">5v5 포지션 / 평균키 / 평균체중 / 평균출생 종합 밸런서</p>
         </div>
         <div class="flex items-center gap-2">
-          <div id="dbStatus" class="bg-indigo-800 px-2 py-1 rounded-lg text-[10px] font-semibold border border-indigo-700 whitespace-nowrap">
+          <div id="dbStatus" class="bg-indigo-800 px-2 py-1 rounded-lg text-[10px] font-semibold border border-indigo-700">
             DB 연결 확인 중...
           </div>
-          <div id="selectedCount" class="bg-indigo-800 px-3 py-1 rounded-lg font-bold text-orange-400 border border-indigo-700 text-xs sm:text-sm whitespace-nowrap">
+          <div id="selectedCount" class="bg-indigo-800 px-3 py-1 rounded-lg font-bold text-orange-400 border border-indigo-700 text-xs sm:text-sm">
             선택: 0명
           </div>
         </div>
@@ -177,22 +112,19 @@
 
       <!-- Left Section: Member Selection -->
       <section class="lg:col-span-1 bg-white p-3.5 sm:p-4 rounded-xl shadow-sm border border-slate-200">
-        <div class="flex justify-between items-center gap-1 mb-2.5 flex-wrap sm:flex-nowrap">
-          <h2 class="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-1.5 whitespace-nowrap shrink-0">
+        <div class="flex justify-between items-center mb-2.5">
+          <h2 class="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
             <i class="fa-solid fa-users text-indigo-600"></i> 참석자 선택
           </h2>
-          <div class="flex items-center gap-1 overflow-x-auto">
-            <button onclick="toggleMemberModal(true)" class="text-[11px] bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded border border-emerald-200 transition whitespace-nowrap shrink-0">
-              + 회원
-            </button>
-            <button onclick="toggleGuestModal(true)" class="text-[11px] bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-bold px-1.5 py-0.5 rounded border border-indigo-200 transition whitespace-nowrap shrink-0">
+          <div class="flex items-center gap-1">
+            <button onclick="toggleGuestModal(true)" class="text-[11px] bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-bold px-2 py-0.5 rounded border border-indigo-200 transition">
               + 게스트
             </button>
-            <button onclick="loadMembersFromDB()" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-1.5 py-0.5 rounded border border-slate-300 transition whitespace-nowrap shrink-0">
-              ↻ 새로고침
+            <button onclick="loadMembersFromDB()" class="text-[11px] bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded border border-emerald-200 transition">
+              ↻ DB 새로고침
             </button>
-            <button onclick="selectAll(true)" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded whitespace-nowrap shrink-0">전체선택</button>
-            <button onclick="selectAll(false)" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded whitespace-nowrap shrink-0">초기화</button>
+            <button onclick="selectAll(true)" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-0.5 rounded">전체선택</button>
+            <button onclick="selectAll(false)" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-0.5 rounded">초기화</button>
           </div>
         </div>
 
@@ -220,14 +152,9 @@
               <option value="4">4개 팀</option>
             </select>
           </div>
-          <div class="flex items-center gap-2 w-full sm:w-auto">
-            <button onclick="openHistoryModal()" class="flex-1 sm:flex-none bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition whitespace-nowrap">
-              <i class="fa-solid fa-clock-rotate-left"></i> 이전 기록
-            </button>
-            <button onclick="copyResultsText()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg flex items-center justify-center gap-2 transition whitespace-nowrap">
-              <i class="fa-regular fa-copy"></i> 카톡 공유용 복사
-            </button>
-          </div>
+          <button onclick="copyResultsText()" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg flex items-center justify-center gap-2 transition">
+            <i class="fa-regular fa-copy"></i> 카톡 공유용 복사
+          </button>
         </div>
 
         <div id="teamResults" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -243,8 +170,6 @@
   </div>
 
   <script>
-    const currentYear = new Date().getFullYear();
-
     function handleAuth(e) {
       e.preventDefault();
       const input = document.getElementById('passwordInput').value;
@@ -270,6 +195,7 @@
     let am8Members = [];
     let selectedPlayerIds = new Set();
     let currentGeneratedTeams = [];
+    let guestCounter = 1000;
 
     window.onload = async () => {
       try {
@@ -288,11 +214,10 @@
         );
 
         await loadMembersFromDB();
-        await loadLatestSavedTeams();
       } catch (error) {
         console.error(error);
         setDbStatus('DB 연결 실패', 'error');
-        alert('Supabase 연결에 실패했습니다.');
+        alert('Supabase 연결에 실패했습니다.\n브라우저 개발자도구(F12)의 Console에서 오류를 확인해 주세요.');
       }
     };
 
@@ -301,7 +226,7 @@
       if (!el) return;
       el.innerText = text;
       el.className =
-        'px-2 py-1 rounded-lg text-[10px] font-semibold border whitespace-nowrap ' +
+        'px-2 py-1 rounded-lg text-[10px] font-semibold border ' +
         (type === 'ok'
           ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
           : type === 'warn'
@@ -332,176 +257,14 @@
         inviterName: m.inviter_name ?? null
       }));
 
+      guestCounter = Math.max(
+        1000,
+        ...am8Members.map(m => Number(m.id) || 0) + 1
+      );
+
       updateInviterOptions();
       renderMemberList(am8Members);
       setDbStatus(`DB 연결됨 · ${am8Members.length}명`, 'ok');
-    }
-
-    /* --- 신규 정회원 추가 기능 --- */
-    function toggleMemberModal(show) {
-      const modal = document.getElementById('memberModal');
-      if (show) modal.classList.remove('hidden');
-      else modal.classList.add('hidden');
-    }
-
-    async function handleAddMember(e) {
-      e.preventDefault();
-      if (!supabaseClient) return alert('DB가 연결되지 않았습니다.');
-
-      const name = document.getElementById('mName').value.trim();
-      const position = document.getElementById('mPosition').value;
-      const height = parseInt(document.getElementById('mHeight').value);
-      const weight = parseInt(document.getElementById('mWeight').value);
-      const birthYear = parseInt(document.getElementById('mBirth').value);
-
-      const { data, error } = await supabaseClient
-        .from('members')
-        .insert({
-          name, position, height, weight,
-          birth_year: birthYear,
-          exempt: false,
-          is_guest: false
-        })
-        .select()
-        .single();
-
-      if (error) return alert('회원 추가 실패: ' + error.message);
-
-      alert(`${name} 회원이 등록되었습니다.`);
-      document.getElementById('mName').value = '';
-      document.getElementById('mHeight').value = '';
-      document.getElementById('mWeight').value = '';
-      document.getElementById('mBirth').value = '';
-      toggleMemberModal(false);
-
-      await loadMembersFromDB();
-    }
-
-    /* --- 회원 삭제 기능 (개선됨) --- */
-    async function deleteMember(id, name) {
-      if (!confirm(`'${name}' 님을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`)) {
-        return;
-      }
-
-      if (!supabaseClient) {
-        alert('DB가 연결되지 않았습니다.');
-        return;
-      }
-
-      const { error } = await supabaseClient
-        .from('members')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        console.error(error);
-        alert('회원 삭제에 실패했습니다: ' + error.message + '\n\nSupabase에서 DELETE 정책(Policy)이 허용되어 있는지 확인해 주세요.');
-        return;
-      }
-
-      am8Members = am8Members.filter(m => m.id !== id);
-      selectedPlayerIds.delete(id);
-
-      renderMemberList(getFilteredMembers());
-      setDbStatus(`DB 연결됨 · ${am8Members.length}명`, 'ok');
-      alert(`${name} 님이 삭제되었습니다.`);
-    }
-
-    /* --- 최근 팀 5개 저장/불러오기 기능 --- */
-    async function saveLatestTeams(teams) {
-      if (!supabaseClient) return;
-      await supabaseClient
-        .from('latest_teams')
-        .insert({ data: teams });
-    }
-
-    async function loadLatestSavedTeams() {
-      if (!supabaseClient) return;
-      const { data, error } = await supabaseClient
-        .from('latest_teams')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      if (data && data.length > 0) {
-        currentGeneratedTeams = data[0].data;
-        renderTeamResults(currentGeneratedTeams);
-      }
-    }
-
-    function toggleHistoryModal(show) {
-      const modal = document.getElementById('historyModal');
-      if (show) modal.classList.remove('hidden');
-      else modal.classList.add('hidden');
-    }
-
-    async function openHistoryModal() {
-      if (!supabaseClient) return alert('DB가 연결되지 않았습니다.');
-
-      const { data, error } = await supabaseClient
-        .from('latest_teams')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (error) return alert('기록을 불러오는데 실패했습니다: ' + error.message);
-
-      const container = document.getElementById('historyList');
-      if (!data || data.length === 0) {
-        container.innerHTML = '<p class="text-center text-slate-400 py-8 text-xs">저장된 팀 생성 기록이 없습니다.</p>';
-      } else {
-        container.innerHTML = data.map((item, index) => {
-          const dateStr = new Date(item.created_at).toLocaleString('ko-KR', {
-            year: 'numeric', month: '2-digit', day: '2-digit',
-            hour: '2-digit', minute: '2-digit'
-          });
-
-          const teamsHtml = item.data.map(t => `
-            <div class="bg-slate-50 p-2 rounded border border-slate-200">
-              <div class="font-bold text-xs text-slate-800 mb-1 flex justify-between">
-                <span>${t.name}</span>
-                <span class="text-[10px] text-slate-500">${t.players.length}명</span>
-              </div>
-              <div class="text-[11px] text-slate-600">
-                ${t.players.map(p => p.name).join(', ')}
-              </div>
-            </div>
-          `).join('');
-
-          return `
-            <div class="border border-slate-200 rounded-xl p-3 bg-white shadow-sm">
-              <div class="flex justify-between items-center mb-2 pb-2 border-b border-slate-100">
-                <span class="text-xs font-bold text-indigo-600 flex items-center gap-1">
-                  <i class="fa-regular fa-calendar"></i> ${dateStr} ${index === 0 ? '<span class="bg-orange-100 text-orange-600 text-[9px] px-1.5 py-0.2 rounded font-bold ml-1">최신</span>' : ''}
-                </span>
-                <button onclick="applyHistoryTeams(${item.id})" class="text-[10px] bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-2 py-1 rounded transition">
-                  이 팀 결과 불러오기
-                </button>
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                ${teamsHtml}
-              </div>
-            </div>
-          `;
-        }).join('');
-      }
-
-      toggleHistoryModal(true);
-    }
-
-    async function applyHistoryTeams(historyId) {
-      const { data, error } = await supabaseClient
-        .from('latest_teams')
-        .select('data')
-        .eq('id', historyId)
-        .single();
-
-      if (data && data.data) {
-        currentGeneratedTeams = data.data;
-        renderTeamResults(currentGeneratedTeams);
-        toggleHistoryModal(false);
-        alert('선택한 기록으로 화면이 갱신되었습니다.');
-      }
     }
 
     function updateInviterOptions() {
@@ -602,8 +365,8 @@
           ? 'bg-amber-500 text-white border-amber-600 font-bold' 
           : 'bg-slate-100 text-slate-400 border-slate-200 hover:bg-slate-200';
 
-        const inviterTag = m.inviterName ? `<span class="text-[9px] bg-purple-100 text-purple-700 font-bold px-1 rounded shrink-0 whitespace-nowrap">게스트(${m.inviterName})</span>` :
-                           (m.isGuest ? '<span class="text-[9px] bg-purple-100 text-purple-700 font-bold px-1 rounded shrink-0 whitespace-nowrap">게스트</span>' : '');
+        const inviterTag = m.inviterName ? `<span class="text-[9px] bg-purple-100 text-purple-700 font-bold px-1 rounded shrink-0">게스트(${m.inviterName})</span>` :
+                           (m.isGuest ? '<span class="text-[9px] bg-purple-100 text-purple-700 font-bold px-1 rounded shrink-0">게스트</span>' : '');
 
         return `
           <div class="flex items-center justify-between p-1.5 rounded-lg border border-slate-200 transition ${isChecked ? 'bg-indigo-50/60 border-indigo-300' : 'bg-white'}">
@@ -611,22 +374,62 @@
               <input type="checkbox" onchange="togglePlayer(${m.id})" ${isChecked ? 'checked' : ''} class="w-3.5 h-3.5 text-indigo-600 rounded focus:ring-indigo-500 shrink-0">
               <span class="font-bold text-slate-800 text-xs truncate shrink-0">${m.name}</span>
               ${inviterTag}
-              <span class="text-[10px] ${posColor} px-1 py-0.2 rounded font-semibold shrink-0 whitespace-nowrap">${m.position}</span>
+              <span class="text-[10px] ${posColor} px-1 py-0.2 rounded font-semibold shrink-0">${m.position}</span>
               <span class="text-[10px] text-slate-400 truncate hidden sm:inline ml-0.5">${m.height}cm/${m.weight}kg</span>
             </label>
             
             <div class="flex items-center gap-1 shrink-0 ml-1">
-              <button onclick="toggleExempt(${m.id})" class="text-[10px] px-1.5 py-0.5 rounded border transition whitespace-nowrap ${exemptBtnClass}">
+              <button onclick="toggleExempt(${m.id})" class="text-[10px] px-1.5 py-0.5 rounded border transition ${exemptBtnClass}">
                 ${m.exempt ? '☕면제' : '내기'}
               </button>
-              <button onclick="deleteMember(${m.id}, '${m.name}')" title="삭제" class="text-[10px] bg-rose-50 hover:bg-rose-100 text-rose-600 px-1.5 py-0.5 rounded border border-rose-200 transition whitespace-nowrap">
-                ✕
+              <button onclick="deleteMember(${m.id}, '${m.name}')" class="text-[10px] px-1.5 py-0.5 rounded border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 font-semibold transition" title="회원 삭제">
+                삭제
               </button>
             </div>
           </div>
         `;
       }).join('');
       updateCount();
+    }
+
+    // ==========================================
+    // [추가된 회원 삭제 처리 함수]
+    // ==========================================
+    async function deleteMember(id, name) {
+      if (!confirm(`'${name}' 회원을 정말 삭제하시겠습니까?`)) {
+        return;
+      }
+
+      if (!supabaseClient) {
+        alert('DB가 연결되어 있지 않습니다.');
+        return;
+      }
+
+      try {
+        // Supabase DB에서 삭제 수행
+        const { error } = await supabaseClient
+          .from('members')
+          .delete()
+          .eq('id', id);
+
+        if (error) {
+          throw error;
+        }
+
+        // 로컬 상태 및 메모리 데이터 갱신
+        am8Members = am8Members.filter(m => m.id !== id);
+        selectedPlayerIds.delete(id);
+
+        // UI 업데이트
+        updateInviterOptions();
+        renderMemberList(getFilteredMembers());
+        setDbStatus(`DB 연결됨 · ${am8Members.length}명`, 'ok');
+
+        alert(`${name} 회원이 성공적으로 삭제되었습니다.`);
+      } catch (error) {
+        console.error('회원 삭제 중 오류:', error);
+        alert('회원 삭제 실패:\n' + (error.message || '알 수 없는 오류가 발생했습니다.'));
+      }
     }
 
     function togglePlayer(id) {
@@ -749,7 +552,6 @@
 
       currentGeneratedTeams = teams;
       renderTeamResults(teams);
-      saveLatestTeams(teams);
     }
 
     function optimizeTeamBalance(teams, pairedGuestIds) {
@@ -791,24 +593,18 @@
     function calculateCost(teams) {
       const avgHeights = teams.map(t => getAvg(t.players, 'height'));
       const avgWeights = teams.map(t => getAvg(t.players, 'weight'));
-      const avgAges = teams.map(t => getAvgAge(t.players));
+      const avgBirthYears = teams.map(t => getAvg(t.players, 'birthYear'));
 
       const heightStdDev = getStdDev(avgHeights);
       const weightStdDev = getStdDev(avgWeights);
-      const ageStdDev = getStdDev(avgAges);
+      const birthYearStdDev = getStdDev(avgBirthYears);
 
-      return (heightStdDev * 2) + weightStdDev + (ageStdDev * 1.5);
+      return (heightStdDev * 2) + weightStdDev + (birthYearStdDev * 1.5);
     }
 
     function getAvg(arr, prop) {
       if (arr.length === 0) return 0;
       return arr.reduce((acc, cur) => acc + cur[prop], 0) / arr.length;
-    }
-
-    function getAvgAge(arr) {
-      if (arr.length === 0) return 0;
-      const totalAge = arr.reduce((acc, cur) => acc + (currentYear - cur.birthYear + 1), 0);
-      return totalAge / arr.length;
     }
 
     function getStdDev(arr) {
@@ -821,7 +617,7 @@
       container.innerHTML = teams.map(t => {
         const avgH = getAvg(t.players, 'height').toFixed(1);
         const avgW = getAvg(t.players, 'weight').toFixed(1);
-        const avgAge = getAvgAge(t.players).toFixed(1);
+        const avgYear = getAvg(t.players, 'birthYear').toFixed(1);
 
         const hCount = t.players.filter(p => p.position === '핸들러').length;
         const wCount = t.players.filter(p => p.position === '윙맨').length;
@@ -835,10 +631,10 @@
                   ${t.name} <span class="text-[10px] ${t.tagBg} px-1.5 py-0.2 rounded-full font-normal">${t.players.length}명</span>
                 </h3>
               </div>
-              <div class="text-[10px] space-x-1 opacity-90 mt-0.5 whitespace-nowrap">
-                <span>평균키 <strong>${avgH}cm</strong></span>
-                <span>/ 평균체중 <strong>${avgW}kg</strong></span>
-                <span>/ 평균나이 <strong>${avgAge}세</strong></span>
+              <div class="text-[10px] space-x-1 opacity-90 mt-0.5">
+                <span>평균키 <strong>${avgH}</strong></span>
+                <span>/ 평균체중 <strong>${avgW}</strong></span>
+                <span>/ 평균출생 <strong>${avgYear}</strong></span>
               </div>
             </div>
 
@@ -853,16 +649,16 @@
                 const badge = p.position === '빅맨' ? 'bg-red-100 text-red-700' :
                              p.position === '핸들러' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700';
                 
-                const guestBadge = p.inviterName ? `<span class="text-[9px] bg-purple-100 text-purple-700 font-bold px-1 rounded shrink-0 whitespace-nowrap">게스트(${p.inviterName})</span>` :
-                                   (p.isGuest ? '<span class="text-[9px] bg-purple-100 text-purple-700 font-bold px-1 rounded shrink-0 whitespace-nowrap">게스트</span>' : '');
+                const guestBadge = p.inviterName ? `<span class="text-[9px] bg-purple-100 text-purple-700 font-bold px-1 rounded shrink-0">게스트(${p.inviterName})</span>` :
+                                   (p.isGuest ? '<span class="text-[9px] bg-purple-100 text-purple-700 font-bold px-1 rounded shrink-0">게스트</span>' : '');
 
                 return `
                   <li class="pt-1 flex justify-between items-center text-xs">
                     <div class="flex items-center gap-1.5 min-w-0">
                       <span class="font-bold text-slate-800 shrink-0">${p.name}</span>
                       ${guestBadge}
-                      <span class="text-[10px] ${badge} px-1 py-0.2 rounded font-semibold shrink-0 whitespace-nowrap">${p.position}</span>
-                      ${p.exempt ? '<span class="text-[9px] bg-amber-100 text-amber-800 px-1 py-0.2 rounded font-semibold shrink-0 whitespace-nowrap">☕면제</span>' : ''}
+                      <span class="text-[10px] ${badge} px-1 py-0.2 rounded font-semibold shrink-0">${p.position}</span>
+                      ${p.exempt ? '<span class="text-[9px] bg-amber-100 text-amber-800 px-1 py-0.2 rounded font-semibold shrink-0">☕면제</span>' : ''}
                     </div>
                   </li>
                 `;
@@ -884,9 +680,9 @@
       currentGeneratedTeams.forEach(t => {
         const avgH = getAvg(t.players, 'height').toFixed(1);
         const avgW = getAvg(t.players, 'weight').toFixed(1);
-        const avgAge = getAvgAge(t.players).toFixed(1);
+        const avgYear = getAvg(t.players, 'birthYear').toFixed(1);
 
-        text += `[ ${t.name} ] (${t.players.length}명 / 평균키 ${avgH}cm / 평균체중 ${avgW}kg / 평균나이 ${avgAge}세)\n`;
+        text += `[ ${t.name} ] (${t.players.length}명 / 평균키 ${avgH}cm / 평균체중 ${avgW}kg / 평균출생 ${avgYear}년생)\n`;
         t.players.forEach(p => {
           const guestTag = p.inviterName ? `(게스트 - ${p.inviterName} 동반) ` : (p.isGuest ? '(게스트) ' : '');
           const exemptText = p.exempt ? ' [☕커피내기 면제]' : '';
