@@ -87,6 +87,54 @@
     </div>
   </div>
 
+  <!-- 신규 회원 추가 모달 -->
+  <div id="memberModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-xs w-full p-5 border border-slate-100">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-base font-bold text-slate-800 flex items-center gap-1.5">
+          <i class="fa-solid fa-user-plus text-emerald-600"></i> 정회원 추가
+        </h3>
+        <button onclick="toggleMemberModal(false)" class="text-slate-400 hover:text-slate-600 text-sm">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      
+      <form onsubmit="handleAddMember(event)" class="space-y-2.5">
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 mb-1">이름 / 닉네임</label>
+          <input type="text" id="mName" required placeholder="예: 홍길동" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 mb-1">포지션</label>
+          <select id="mPosition" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            <option value="핸들러">핸들러</option>
+            <option value="윙맨">윙맨</option>
+            <option value="빅맨">빅맨</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-600 mb-1">키(cm)</label>
+            <input type="number" id="mHeight" required placeholder="178" class="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs text-center focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-600 mb-1">체중(kg)</label>
+            <input type="number" id="mWeight" required placeholder="75" class="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs text-center focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-600 mb-1">출생(연도)</label>
+            <input type="number" id="mBirth" required placeholder="1992" class="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs text-center focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
+        </div>
+        
+        <div class="pt-2 flex gap-2">
+          <button type="button" onclick="toggleMemberModal(false)" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2 rounded-lg text-xs transition">취소</button>
+          <button type="submit" class="w-1/2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-xs transition shadow-md">회원 등록</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- 메인 콘텐트 -->
   <div id="appContent" class="hidden">
     <header class="bg-indigo-900 text-white py-3 shadow-md sticky top-0 z-40">
@@ -117,11 +165,14 @@
             <i class="fa-solid fa-users text-indigo-600"></i> 참석자 선택
           </h2>
           <div class="flex items-center gap-1 overflow-x-auto">
+            <button onclick="toggleMemberModal(true)" class="text-[11px] bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded border border-emerald-200 transition whitespace-nowrap shrink-0">
+              + 회원
+            </button>
             <button onclick="toggleGuestModal(true)" class="text-[11px] bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-bold px-1.5 py-0.5 rounded border border-indigo-200 transition whitespace-nowrap shrink-0">
               + 게스트
             </button>
-            <button onclick="loadMembersFromDB()" class="text-[11px] bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded border border-emerald-200 transition whitespace-nowrap shrink-0">
-              ↻ DB 새로고침
+            <button onclick="loadMembersFromDB()" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-1.5 py-0.5 rounded border border-slate-300 transition whitespace-nowrap shrink-0">
+              ↻ 새로고침
             </button>
             <button onclick="selectAll(true)" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded whitespace-nowrap shrink-0">전체선택</button>
             <button onclick="selectAll(false)" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded whitespace-nowrap shrink-0">초기화</button>
@@ -170,7 +221,7 @@
   </div>
 
   <script>
-    const currentYear = new Date().getFullYear(); // 나이 계산용 현재 연도
+    const currentYear = new Date().getFullYear();
 
     function handleAuth(e) {
       e.preventDefault();
@@ -216,6 +267,7 @@
         );
 
         await loadMembersFromDB();
+        await loadLatestSavedTeams();
       } catch (error) {
         console.error(error);
         setDbStatus('DB 연결 실패', 'error');
@@ -267,6 +319,95 @@
       updateInviterOptions();
       renderMemberList(am8Members);
       setDbStatus(`DB 연결됨 · ${am8Members.length}명`, 'ok');
+    }
+
+    /* --- 신규 정회원 추가 기능 --- */
+    function toggleMemberModal(show) {
+      const modal = document.getElementById('memberModal');
+      if (show) modal.classList.remove('hidden');
+      else modal.classList.add('hidden');
+    }
+
+    async function handleAddMember(e) {
+      e.preventDefault();
+      if (!supabaseClient) return alert('DB가 연결되지 않았습니다.');
+
+      const name = document.getElementById('mName').value.trim();
+      const position = document.getElementById('mPosition').value;
+      const height = parseInt(document.getElementById('mHeight').value);
+      const weight = parseInt(document.getElementById('mWeight').value);
+      const birthYear = parseInt(document.getElementById('mBirth').value);
+
+      const { data, error } = await supabaseClient
+        .from('members')
+        .insert({
+          name, position, height, weight,
+          birth_year: birthYear,
+          exempt: false,
+          is_guest: false
+        })
+        .select()
+        .single();
+
+      if (error) return alert('회원 추가 실패: ' + error.message);
+
+      alert(`${name} 회원이 등록되었습니다.`);
+      document.getElementById('mName').value = '';
+      document.getElementById('mHeight').value = '';
+      document.getElementById('mWeight').value = '';
+      document.getElementById('mBirth').value = '';
+      toggleMemberModal(false);
+
+      await loadMembersFromDB();
+    }
+
+    /* --- 회원 삭제 기능 --- */
+    async function deleteMember(id, name) {
+      if (!confirm(`'${name}' 님을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`)) {
+        return;
+      }
+
+      if (!supabaseClient) {
+        alert('DB가 연결되지 않았습니다.');
+        return;
+      }
+
+      const { error } = await supabaseClient
+        .from('members')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error(error);
+        alert('회원 삭제에 실패했습니다: ' + error.message);
+        return;
+      }
+
+      selectedPlayerIds.delete(id);
+      await loadMembersFromDB();
+      alert(`${name} 님이 삭제되었습니다.`);
+    }
+
+    /* --- 최근 생성된 팀 저장/불러오기 --- */
+    async function saveLatestTeams(teams) {
+      if (!supabaseClient) return;
+      await supabaseClient
+        .from('latest_teams')
+        .upsert({ id: 1, data: teams, updated_at: new Date() });
+    }
+
+    async function loadLatestSavedTeams() {
+      if (!supabaseClient) return;
+      const { data, error } = await supabaseClient
+        .from('latest_teams')
+        .select('data')
+        .eq('id', 1)
+        .single();
+
+      if (data && data.data) {
+        currentGeneratedTeams = data.data;
+        renderTeamResults(currentGeneratedTeams);
+      }
     }
 
     function updateInviterOptions() {
@@ -383,6 +524,9 @@
             <div class="flex items-center gap-1 shrink-0 ml-1">
               <button onclick="toggleExempt(${m.id})" class="text-[10px] px-1.5 py-0.5 rounded border transition whitespace-nowrap ${exemptBtnClass}">
                 ${m.exempt ? '☕면제' : '내기'}
+              </button>
+              <button onclick="deleteMember(${m.id}, '${m.name}')" title="삭제" class="text-[10px] bg-rose-50 hover:bg-rose-100 text-rose-600 px-1.5 py-0.5 rounded border border-rose-200 transition whitespace-nowrap">
+                ✕
               </button>
             </div>
           </div>
@@ -511,6 +655,7 @@
 
       currentGeneratedTeams = teams;
       renderTeamResults(teams);
+      saveLatestTeams(teams);
     }
 
     function optimizeTeamBalance(teams, pairedGuestIds) {
@@ -566,7 +711,6 @@
       return arr.reduce((acc, cur) => acc + cur[prop], 0) / arr.length;
     }
 
-    // 평균 나이 계산 함수 (현재 연도 - 출생연도 + 1)
     function getAvgAge(arr) {
       if (arr.length === 0) return 0;
       const totalAge = arr.reduce((acc, cur) => acc + (currentYear - cur.birthYear + 1), 0);
