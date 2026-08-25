@@ -388,7 +388,7 @@
       await loadMembersFromDB(false);
     }
 
-    /* --- 회원 삭제 기능 --- */
+    /* --- 회원 삭제 기능 (수정됨) --- */
     async function deleteMember(id, name) {
       if (!confirm(`'${name}' 님을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`)) {
         return;
@@ -399,24 +399,30 @@
         return;
       }
 
-      const { error } = await supabaseClient
+      // .select()를 붙여 실제 삭제된 레코드가 있는지 검증
+      const { data, error } = await supabaseClient
         .from('members')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .select();
 
       if (error) {
         console.error(error);
-        alert('회원 삭제에 실패했습니다: ' + error.message + '\n\nSupabase Dashboard에서 DELETE 정책(RLS Policy)이 허용되어 있는지 확인해 주세요.');
+        alert('회원 삭제에 실패했습니다: ' + error.message);
         return;
       }
 
-      am8Members = am8Members.filter(m => m.id !== id);
+      if (!data || data.length === 0) {
+        alert('삭제에 실패했습니다. Supabase RLS 권한(DELETE)이 비활성화되어 있을 가능성이 높습니다.');
+        return;
+      }
+
+      // DB 삭제 검증이 통과한 경우에만 로컬 데이터 업데이트 및 다시 동기화
       selectedPlayerIds.delete(id);
       initialDefaultMemberIds.delete(id);
+      await loadMembersFromDB(false);
 
-      renderMemberList(getFilteredMembers());
-      setDbStatus(`DB 연결됨 · ${am8Members.length}명`, 'ok');
-      alert(`${name} 님이 삭제되었습니다.`);
+      alert(`${name} 님이 완전히 삭제되었습니다.`);
     }
 
     /* --- 최근 팀 5개 저장/불러오기 기능 --- */
@@ -572,24 +578,9 @@
         return;
       }
 
-      const guestObj = {
-        id: data.id,
-        name: data.name,
-        position: data.position,
-        height: data.height,
-        weight: data.weight,
-        birthYear: data.birth_year,
-        exempt: data.exempt ?? false,
-        isGuest: data.is_guest ?? true,
-        inviterId: data.inviter_id ?? null,
-        inviterName: data.inviter_name ?? null
-      };
-
-      am8Members.unshift(guestObj);
-      selectedPlayerIds.add(guestObj.id);
-
-      if (inviterId) {
-        selectedPlayerIds.add(inviterId);
+      if (data) {
+        selectedPlayerIds.add(data.id);
+        if (inviterId) selectedPlayerIds.add(inviterId);
       }
 
       document.getElementById('gName').value = '';
@@ -598,8 +589,7 @@
       document.getElementById('gBirth').value = '';
       toggleGuestModal(false);
 
-      renderMemberList(getFilteredMembers());
-      setDbStatus(`DB 연결됨 · ${am8Members.length}명`, 'ok');
+      await loadMembersFromDB(false);
       alert(`${name} 게스트가 DB에 저장되었습니다.`);
     }
 
@@ -680,49 +670,50 @@
       renderMemberList(getFilteredMembers());
     }
 
-    /* --- [개선된 전체 초기화 기능] --- */
+    /* --- [전체 초기화 기능 (수정됨)] --- */
     async function resetAllSelections() {
-      if (!confirm("선택을 해제하고, 게스트 및 신규 추가된 회원을 DB에서 완전히 삭제하여 초기 상태로 되돌리시겠습니까?")) {
+      if (!confirm("선택을 해제하고, 게스트 및 신규 추가된 회원을 DB에서 완전히 삭제하시겠습니까?")) {
         return;
       }
 
-      // 1. 체크박스 선택 해제
       selectedPlayerIds.clear();
 
       if (supabaseClient) {
-        // 2-1. 게스트 DB 삭제
-        const { error: guestErr } = await supabaseClient
+        // 1. 게스트 DB 삭제 검증
+        const { data: guestData, error: guestErr } = await supabaseClient
           .from('members')
           .delete()
-          .eq('is_guest', true);
+          .eq('is_guest', true)
+          .select();
 
         if (guestErr) {
-          alert("게스트 삭제 실패 (Supabase RLS 삭제 권한을 확인해 주세요):\n" + guestErr.message);
+          alert("게스트 삭제 실패:\n" + guestErr.message);
           return;
         }
 
-        // 2-2. 최초 접속 시 기준 데이터에 없었던 신규 정회원 DB 삭제
+        // 2. 신규 정회원 DB 삭제 검증
         const addedMemberIds = am8Members
           .filter(m => !m.isGuest && !initialDefaultMemberIds.has(m.id))
           .map(m => m.id);
 
         if (addedMemberIds.length > 0) {
-          const { error: memberErr } = await supabaseClient
+          const { data: memberData, error: memberErr } = await supabaseClient
             .from('members')
             .delete()
-            .in('id', addedMemberIds);
+            .in('id', addedMemberIds)
+            .select();
 
           if (memberErr) {
-            alert("신규 회원 삭제 실패 (Supabase RLS 삭제 권한을 확인해 주세요):\n" + memberErr.message);
+            alert("신규 회원 삭제 실패:\n" + memberErr.message);
             return;
           }
         }
       }
 
-      // 3. DB 삭제 성공 후 최신 데이터를 다시 동기화
+      // 3. DB 삭제 성공 완료 후 전체 데이터를 다시 불러옴
       await loadMembersFromDB(false);
       updateCount();
-      alert("초기화가 완료되었습니다. 게스트 및 신규 추가 회원 데이터가 완전히 삭제되었습니다.");
+      alert("초기화가 완료되었습니다. 신규 회원 및 게스트 데이터가 DB에서 완전히 삭제되었습니다.");
     }
 
     function filterMembers() {
