@@ -135,7 +135,7 @@
     </div>
   </div>
 
-  <!-- 최근 생성 팀 5개 히스토리 모달 (추가됨) -->
+  <!-- 최근 생성 팀 5개 히스토리 모달 -->
   <div id="historyModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full p-5 border border-slate-100 max-h-[85vh] flex flex-col">
       <div class="flex justify-between items-center mb-3 shrink-0">
@@ -270,7 +270,6 @@
     let am8Members = [];
     let selectedPlayerIds = new Set();
     let currentGeneratedTeams = [];
-    let guestCounter = 1000;
 
     window.onload = async () => {
       try {
@@ -279,7 +278,7 @@
           SUPABASE_ANON_KEY.includes('여기에_')
         ) {
           setDbStatus('Supabase 설정 필요', 'warn');
-          alert('Supabase 설정이 아직 입력되지 않았습니다.\nHTML 파일 상단의 SUPABASE_URL과 SUPABASE_ANON_KEY를 입력해 주세요.');
+          alert('Supabase 설정이 아직 입력되지 않았습니다.');
           return;
         }
 
@@ -293,7 +292,7 @@
       } catch (error) {
         console.error(error);
         setDbStatus('DB 연결 실패', 'error');
-        alert('Supabase 연결에 실패했습니다.\n브라우저 개발자도구(F12)의 Console에서 오류를 확인해 주세요.');
+        alert('Supabase 연결에 실패했습니다.');
       }
     };
 
@@ -332,11 +331,6 @@
         inviterId: m.inviter_id ?? null,
         inviterName: m.inviter_name ?? null
       }));
-
-      guestCounter = Math.max(
-        1000,
-        ...am8Members.map(m => Number(m.id) || 0) + 1
-      );
 
       updateInviterOptions();
       renderMemberList(am8Members);
@@ -383,7 +377,7 @@
       await loadMembersFromDB();
     }
 
-    /* --- 회원 삭제 기능 --- */
+    /* --- 회원 삭제 기능 (개선됨) --- */
     async function deleteMember(id, name) {
       if (!confirm(`'${name}' 님을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`)) {
         return;
@@ -401,12 +395,15 @@
 
       if (error) {
         console.error(error);
-        alert('회원 삭제에 실패했습니다: ' + error.message);
+        alert('회원 삭제에 실패했습니다: ' + error.message + '\n\nSupabase에서 DELETE 정책(Policy)이 허용되어 있는지 확인해 주세요.');
         return;
       }
 
+      am8Members = am8Members.filter(m => m.id !== id);
       selectedPlayerIds.delete(id);
-      await loadMembersFromDB();
+
+      renderMemberList(getFilteredMembers());
+      setDbStatus(`DB 연결됨 · ${am8Members.length}명`, 'ok');
       alert(`${name} 님이 삭제되었습니다.`);
     }
 
