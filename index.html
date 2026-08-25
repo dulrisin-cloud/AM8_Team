@@ -135,6 +135,23 @@
     </div>
   </div>
 
+  <!-- 최근 생성 팀 5개 히스토리 모달 (추가됨) -->
+  <div id="historyModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full p-5 border border-slate-100 max-h-[85vh] flex flex-col">
+      <div class="flex justify-between items-center mb-3 shrink-0">
+        <h3 class="text-base font-bold text-slate-800 flex items-center gap-1.5">
+          <i class="fa-solid fa-clock-rotate-left text-indigo-600"></i> 최근팀 기록 (최대 5개)
+        </h3>
+        <button onclick="toggleHistoryModal(false)" class="text-slate-400 hover:text-slate-600 text-sm">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      
+      <div id="historyList" class="overflow-y-auto space-y-4 pr-1 flex-1">
+      </div>
+    </div>
+  </div>
+
   <!-- 메인 콘텐트 -->
   <div id="appContent" class="hidden">
     <header class="bg-indigo-900 text-white py-3 shadow-md sticky top-0 z-40">
@@ -203,9 +220,14 @@
               <option value="4">4개 팀</option>
             </select>
           </div>
-          <button onclick="copyResultsText()" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg flex items-center justify-center gap-2 transition whitespace-nowrap">
-            <i class="fa-regular fa-copy"></i> 카톡 공유용 복사
-          </button>
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <button onclick="openHistoryModal()" class="flex-1 sm:flex-none bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition whitespace-nowrap">
+              <i class="fa-solid fa-clock-rotate-left"></i> 이전 기록
+            </button>
+            <button onclick="copyResultsText()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg flex items-center justify-center gap-2 transition whitespace-nowrap">
+              <i class="fa-regular fa-copy"></i> 카톡 공유용 복사
+            </button>
+          </div>
         </div>
 
         <div id="teamResults" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -388,25 +410,100 @@
       alert(`${name} 님이 삭제되었습니다.`);
     }
 
-    /* --- 최근 생성된 팀 저장/불러오기 --- */
+    /* --- 최근 팀 5개 저장/불러오기 기능 --- */
     async function saveLatestTeams(teams) {
       if (!supabaseClient) return;
       await supabaseClient
         .from('latest_teams')
-        .upsert({ id: 1, data: teams, updated_at: new Date() });
+        .insert({ data: teams });
     }
 
     async function loadLatestSavedTeams() {
       if (!supabaseClient) return;
       const { data, error } = await supabaseClient
         .from('latest_teams')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (data && data.length > 0) {
+        currentGeneratedTeams = data[0].data;
+        renderTeamResults(currentGeneratedTeams);
+      }
+    }
+
+    function toggleHistoryModal(show) {
+      const modal = document.getElementById('historyModal');
+      if (show) modal.classList.remove('hidden');
+      else modal.classList.add('hidden');
+    }
+
+    async function openHistoryModal() {
+      if (!supabaseClient) return alert('DB가 연결되지 않았습니다.');
+
+      const { data, error } = await supabaseClient
+        .from('latest_teams')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) return alert('기록을 불러오는데 실패했습니다: ' + error.message);
+
+      const container = document.getElementById('historyList');
+      if (!data || data.length === 0) {
+        container.innerHTML = '<p class="text-center text-slate-400 py-8 text-xs">저장된 팀 생성 기록이 없습니다.</p>';
+      } else {
+        container.innerHTML = data.map((item, index) => {
+          const dateStr = new Date(item.created_at).toLocaleString('ko-KR', {
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit'
+          });
+
+          const teamsHtml = item.data.map(t => `
+            <div class="bg-slate-50 p-2 rounded border border-slate-200">
+              <div class="font-bold text-xs text-slate-800 mb-1 flex justify-between">
+                <span>${t.name}</span>
+                <span class="text-[10px] text-slate-500">${t.players.length}명</span>
+              </div>
+              <div class="text-[11px] text-slate-600">
+                ${t.players.map(p => p.name).join(', ')}
+              </div>
+            </div>
+          `).join('');
+
+          return `
+            <div class="border border-slate-200 rounded-xl p-3 bg-white shadow-sm">
+              <div class="flex justify-between items-center mb-2 pb-2 border-b border-slate-100">
+                <span class="text-xs font-bold text-indigo-600 flex items-center gap-1">
+                  <i class="fa-regular fa-calendar"></i> ${dateStr} ${index === 0 ? '<span class="bg-orange-100 text-orange-600 text-[9px] px-1.5 py-0.2 rounded font-bold ml-1">최신</span>' : ''}
+                </span>
+                <button onclick="applyHistoryTeams(${item.id})" class="text-[10px] bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-2 py-1 rounded transition">
+                  이 팀 결과 불러오기
+                </button>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                ${teamsHtml}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      toggleHistoryModal(true);
+    }
+
+    async function applyHistoryTeams(historyId) {
+      const { data, error } = await supabaseClient
+        .from('latest_teams')
         .select('data')
-        .eq('id', 1)
+        .eq('id', historyId)
         .single();
 
       if (data && data.data) {
         currentGeneratedTeams = data.data;
         renderTeamResults(currentGeneratedTeams);
+        toggleHistoryModal(false);
+        alert('선택한 기록으로 화면이 갱신되었습니다.');
       }
     }
 
