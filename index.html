@@ -135,7 +135,7 @@
     </div>
   </div>
 
-  <!-- 최근 생성 팀 5개 히스토리 모달 (추가됨) -->
+  <!-- 최근 생성 팀 5개 히스토리 모달 -->
   <div id="historyModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full p-5 border border-slate-100 max-h-[85vh] flex flex-col">
       <div class="flex justify-between items-center mb-3 shrink-0">
@@ -192,7 +192,8 @@
               ↻ 새로고침
             </button>
             <button onclick="selectAll(true)" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded whitespace-nowrap shrink-0">전체선택</button>
-            <button onclick="selectAll(false)" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded whitespace-nowrap shrink-0">초기화</button>
+            <!-- 초기화 버튼 수정: 게스트 일괄 삭제 및 선택 해제 함수 연결 -->
+            <button onclick="resetAllSelections()" class="text-[11px] bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold px-1.5 py-0.5 rounded border border-rose-200 transition whitespace-nowrap shrink-0">초기화</button>
           </div>
         </div>
 
@@ -270,7 +271,6 @@
     let am8Members = [];
     let selectedPlayerIds = new Set();
     let currentGeneratedTeams = [];
-    let guestCounter = 1000;
 
     window.onload = async () => {
       try {
@@ -279,7 +279,7 @@
           SUPABASE_ANON_KEY.includes('여기에_')
         ) {
           setDbStatus('Supabase 설정 필요', 'warn');
-          alert('Supabase 설정이 아직 입력되지 않았습니다.\nHTML 파일 상단의 SUPABASE_URL과 SUPABASE_ANON_KEY를 입력해 주세요.');
+          alert('Supabase 설정이 아직 입력되지 않았습니다.');
           return;
         }
 
@@ -293,7 +293,7 @@
       } catch (error) {
         console.error(error);
         setDbStatus('DB 연결 실패', 'error');
-        alert('Supabase 연결에 실패했습니다.\n브라우저 개발자도구(F12)의 Console에서 오류를 확인해 주세요.');
+        alert('Supabase 연결에 실패했습니다.');
       }
     };
 
@@ -332,11 +332,6 @@
         inviterId: m.inviter_id ?? null,
         inviterName: m.inviter_name ?? null
       }));
-
-      guestCounter = Math.max(
-        1000,
-        ...am8Members.map(m => Number(m.id) || 0) + 1
-      );
 
       updateInviterOptions();
       renderMemberList(am8Members);
@@ -401,12 +396,15 @@
 
       if (error) {
         console.error(error);
-        alert('회원 삭제에 실패했습니다: ' + error.message);
+        alert('회원 삭제에 실패했습니다: ' + error.message + '\n\nSupabase에서 DELETE 정책(Policy)이 허용되어 있는지 확인해 주세요.');
         return;
       }
 
+      am8Members = am8Members.filter(m => m.id !== id);
       selectedPlayerIds.delete(id);
-      await loadMembersFromDB();
+
+      renderMemberList(getFilteredMembers());
+      setDbStatus(`DB 연결됨 · ${am8Members.length}명`, 'ok');
       alert(`${name} 님이 삭제되었습니다.`);
     }
 
@@ -669,6 +667,31 @@
         selectedPlayerIds.clear();
       }
       renderMemberList(getFilteredMembers());
+    }
+
+    /* --- 초기화 기능 (게스트 삭제 및 선택 해제) --- */
+    async function resetAllSelections() {
+      if (!confirm("선택을 초기화하고 등록된 모든 게스트를 삭제하시겠습니까?")) {
+        return;
+      }
+
+      if (supabaseClient) {
+        // DB에서 게스트 데이터 일괄 삭제
+        const { error } = await supabaseClient
+          .from('members')
+          .delete()
+          .eq('is_guest', true);
+
+        if (error) {
+          console.error(error);
+          alert('게스트 삭제 실패: ' + error.message + '\n\nSupabase DELETE 정책(Policy)이 활성화되어 있는지 확인하세요.');
+          return;
+        }
+      }
+
+      // 선택 목록 초기화 및 메모리 목록 갱신
+      selectedPlayerIds.clear();
+      await loadMembersFromDB();
     }
 
     function filterMembers() {
