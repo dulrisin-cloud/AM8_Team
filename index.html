@@ -192,7 +192,6 @@
               ↻ 새로고침
             </button>
             <button onclick="selectAll(true)" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded whitespace-nowrap shrink-0">전체선택</button>
-            <!-- 초기화 버튼 수정: 게스트 일괄 삭제 및 선택 해제 함수 연결 -->
             <button onclick="resetAllSelections()" class="text-[11px] bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold px-1.5 py-0.5 rounded border border-rose-200 transition whitespace-nowrap shrink-0">초기화</button>
           </div>
         </div>
@@ -669,29 +668,41 @@
       renderMemberList(getFilteredMembers());
     }
 
-    /* --- 초기화 기능 (게스트 삭제 및 선택 해제) --- */
+    /* --- 초기화 기능 (게스트 DB 삭제 + UI 메모리 즉시 제거 및 화면 반영) --- */
     async function resetAllSelections() {
       if (!confirm("선택을 초기화하고 등록된 모든 게스트를 삭제하시겠습니까?")) {
         return;
       }
 
+      // 1. 선택 목록 즉시 초기화
+      selectedPlayerIds.clear();
+
+      // 2. DB가 연결되어 있으면 DB에서 게스트 일괄 삭제
       if (supabaseClient) {
-        // DB에서 게스트 데이터 일괄 삭제
         const { error } = await supabaseClient
           .from('members')
           .delete()
           .eq('is_guest', true);
 
         if (error) {
-          console.error(error);
-          alert('게스트 삭제 실패: ' + error.message + '\n\nSupabase DELETE 정책(Policy)이 활성화되어 있는지 확인하세요.');
+          console.error('게스트 삭제 오류:', error);
+          alert('게스트 삭제 실패: ' + error.message + '\n\nSupabase Dashboard -> Table Editor -> members -> RLS Policy에서 DELETE 권한이 비활성화되어 있는지 확인해 주세요.');
           return;
         }
       }
 
-      // 선택 목록 초기화 및 메모리 목록 갱신
-      selectedPlayerIds.clear();
-      await loadMembersFromDB();
+      // 3. UI 로컬 배열에서 게스트 데이터 즉시 제거
+      am8Members = am8Members.filter(m => !m.isGuest);
+
+      // 4. 화면 및 카운트 새로고침
+      renderMemberList(getFilteredMembers());
+      updateCount();
+      
+      // 5. 게스트 초대한 회원 선택 드롭다운도 갱신
+      updateInviterOptions();
+      setDbStatus(`DB 연결됨 · ${am8Members.length}명`, 'ok');
+
+      alert('초기화 및 게스트 삭제가 완료되었습니다.');
     }
 
     function filterMembers() {
