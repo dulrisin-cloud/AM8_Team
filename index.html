@@ -268,6 +268,7 @@
 
     let supabaseClient = null;
     let am8Members = [];
+    let initialDefaultMemberIds = new Set(); // 최초 연결 시 기본 정회원 ID 보존용
     let selectedPlayerIds = new Set();
     let currentGeneratedTeams = [];
 
@@ -287,7 +288,7 @@
           SUPABASE_ANON_KEY
         );
 
-        await loadMembersFromDB();
+        await loadMembersFromDB(true); // 첫 로딩 시 기본 멤버 기준값 세팅
         await loadLatestSavedTeams();
       } catch (error) {
         console.error(error);
@@ -309,7 +310,7 @@
           : 'bg-red-100 text-red-700 border-red-200');
     }
 
-    async function loadMembersFromDB() {
+    async function loadMembersFromDB(isInitial = false) {
       if (!supabaseClient) return;
 
       const { data, error } = await supabaseClient
@@ -331,6 +332,11 @@
         inviterId: m.inviter_id ?? null,
         inviterName: m.inviter_name ?? null
       }));
+
+      // 최초 접속 시점의 기본 정회원 ID 기록 (이후 추가된 회원 구별용)
+      if (isInitial && initialDefaultMemberIds.size === 0) {
+        am8Members.filter(m => !m.isGuest).forEach(m => initialDefaultMemberIds.add(m.id));
+      }
 
       updateInviterOptions();
       renderMemberList(am8Members);
@@ -374,7 +380,7 @@
       document.getElementById('mBirth').value = '';
       toggleMemberModal(false);
 
-      await loadMembersFromDB();
+      await loadMembersFromDB(false);
     }
 
     /* --- 회원 삭제 기능 --- */
@@ -401,6 +407,7 @@
 
       am8Members = am8Members.filter(m => m.id !== id);
       selectedPlayerIds.delete(id);
+      initialDefaultMemberIds.delete(id);
 
       renderMemberList(getFilteredMembers());
       setDbStatus(`DB 연결됨 · ${am8Members.length}명`, 'ok');
@@ -668,41 +675,58 @@
       renderMemberList(getFilteredMembers());
     }
 
-    /* --- 초기화 기능 (게스트 DB 삭제 + UI 메모리 즉시 제거 및 화면 반영) --- */
+    /* --- [수정 완료] 전체 초기화 기능 (신규 회원 + 게스트 DB 일괄 삭제 후 기본 데이터만 유지) --- */
     async function resetAllSelections() {
-      if (!confirm("선택을 초기화하고 등록된 모든 게스트를 삭제하시겠습니까?")) {
+      if (!confirm("선택을 해제하고, 신규 추가된 정회원 및 게스트를 모두 삭제하여 초기 상태로 되돌리시겠습니까?")) {
         return;
       }
 
-      // 1. 선택 목록 즉시 초기화
+      // 1. 선택 상태 해제
       selectedPlayerIds.clear();
 
-      // 2. DB가 연결되어 있으면 DB에서 게스트 일괄 삭제
       if (supabaseClient) {
-        const { error } = await supabaseClient
+        // 삭제 조건 대상: 게스트 데이터 OR 새로 추가된 정회원 데이터 (기존 기본 ID 목록에 없는 ID)
+        const addedMemberIds = am8Members
+          .filter(m => !m.isGuest && !initialDefaultMemberIds.has(m.id))
+          .map(m => m.id);
+
+        // 2-1. DB에서 게스트 삭제
+        const { error: guestErr } = await supabaseClient
           .from('members')
           .delete()
           .eq('is_guest', true);
 
-        if (error) {
-          console.error('게스트 삭제 오류:', error);
-          alert('게스트 삭제 실패: ' + error.message + '\n\nSupabase Dashboard -> Table Editor -> members -> RLS Policy에서 DELETE 권한이 비활성화되어 있는지 확인해 주세요.');
+        if (guestErr) {
+          console.error('게스트 삭제 오류:', guestErr);
+          alert('게스트 삭제 실패: ' + guestErr.message);
           return;
+        }
+
+        // 2-2. DB에서 신규 추가 정회원 삭제
+        if (addedMemberIds.length > 0) {
+          const { error: memberErr } = await supabaseClient
+            .from('members')
+            .delete()
+            .in('id', addedMemberIds);
+
+          if (memberErr) {
+            console.error('신규 회원 삭제 오류:', memberErr);
+            alert('신규 회원 삭제 실패: ' + memberErr.message);
+            return;
+          }
         }
       }
 
-      // 3. UI 로컬 배열에서 게스트 데이터 즉시 제거
-      am8Members = am8Members.filter(m => !m.isGuest);
+      // 3. 앱 화면(메모리) 상의 배열을 초기 기본 회원 데이터만 남김
+      am8Members = am8Members.filter(m => !m.isGuest && initialDefaultMemberIds.has(m.id));
 
-      // 4. 화면 및 카운트 새로고침
+      // 4. 화면 UI 업데이트
       renderMemberList(getFilteredMembers());
       updateCount();
-      
-      // 5. 게스트 초대한 회원 선택 드롭다운도 갱신
       updateInviterOptions();
       setDbStatus(`DB 연결됨 · ${am8Members.length}명`, 'ok');
 
-      alert('초기화 및 게스트 삭제가 완료되었습니다.');
+      alert('초기화가 완료되었습니다. 신규 회원 및 게스트 데이터가 삭제되었습니다.');
     }
 
     function filterMembers() {
