@@ -188,7 +188,7 @@
             <button onclick="toggleGuestModal(true)" class="text-[11px] bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-bold px-1.5 py-0.5 rounded border border-indigo-200 transition whitespace-nowrap shrink-0">
               + 게스트
             </button>
-            <button onclick="loadMembersFromDB()" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-1.5 py-0.5 rounded border border-slate-300 transition whitespace-nowrap shrink-0">
+            <button onclick="loadMembersFromDB(false)" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-1.5 py-0.5 rounded border border-slate-300 transition whitespace-nowrap shrink-0">
               ↻ 새로고침
             </button>
             <button onclick="selectAll(true)" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded whitespace-nowrap shrink-0">전체선택</button>
@@ -318,7 +318,11 @@
         .select('*')
         .order('name', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('DB 불러오기 실패:', error);
+        setDbStatus('DB 불러오기 실패', 'error');
+        return;
+      }
 
       am8Members = (data || []).map(m => ({
         id: m.id,
@@ -333,8 +337,9 @@
         inviterName: m.inviter_name ?? null
       }));
 
-      // 최초 접속 시점의 기본 정회원 ID 기록 (이후 추가된 회원 구별용)
-      if (isInitial && initialDefaultMemberIds.size === 0) {
+      // 앱 최초 접속(초기 로딩) 시 게스트가 아닌 정회원 목록을 기준 데이터로 보존
+      if (isInitial) {
+        initialDefaultMemberIds.clear();
         am8Members.filter(m => !m.isGuest).forEach(m => initialDefaultMemberIds.add(m.id));
       }
 
@@ -401,7 +406,7 @@
 
       if (error) {
         console.error(error);
-        alert('회원 삭제에 실패했습니다: ' + error.message + '\n\nSupabase에서 DELETE 정책(Policy)이 허용되어 있는지 확인해 주세요.');
+        alert('회원 삭제에 실패했습니다: ' + error.message + '\n\nSupabase Dashboard에서 DELETE 정책(RLS Policy)이 허용되어 있는지 확인해 주세요.');
         return;
       }
 
@@ -675,34 +680,32 @@
       renderMemberList(getFilteredMembers());
     }
 
-    /* --- [수정 완료] 전체 초기화 기능 (신규 회원 + 게스트 DB 일괄 삭제 후 기본 데이터만 유지) --- */
+    /* --- [개선된 전체 초기화 기능] --- */
     async function resetAllSelections() {
-      if (!confirm("선택을 해제하고, 신규 추가된 정회원 및 게스트를 모두 삭제하여 초기 상태로 되돌리시겠습니까?")) {
+      if (!confirm("선택을 해제하고, 게스트 및 신규 추가된 회원을 DB에서 완전히 삭제하여 초기 상태로 되돌리시겠습니까?")) {
         return;
       }
 
-      // 1. 선택 상태 해제
+      // 1. 체크박스 선택 해제
       selectedPlayerIds.clear();
 
       if (supabaseClient) {
-        // 삭제 조건 대상: 게스트 데이터 OR 새로 추가된 정회원 데이터 (기존 기본 ID 목록에 없는 ID)
-        const addedMemberIds = am8Members
-          .filter(m => !m.isGuest && !initialDefaultMemberIds.has(m.id))
-          .map(m => m.id);
-
-        // 2-1. DB에서 게스트 삭제
+        // 2-1. 게스트 DB 삭제
         const { error: guestErr } = await supabaseClient
           .from('members')
           .delete()
           .eq('is_guest', true);
 
         if (guestErr) {
-          console.error('게스트 삭제 오류:', guestErr);
-          alert('게스트 삭제 실패: ' + guestErr.message);
+          alert("게스트 삭제 실패 (Supabase RLS 삭제 권한을 확인해 주세요):\n" + guestErr.message);
           return;
         }
 
-        // 2-2. DB에서 신규 추가 정회원 삭제
+        // 2-2. 최초 접속 시 기준 데이터에 없었던 신규 정회원 DB 삭제
+        const addedMemberIds = am8Members
+          .filter(m => !m.isGuest && !initialDefaultMemberIds.has(m.id))
+          .map(m => m.id);
+
         if (addedMemberIds.length > 0) {
           const { error: memberErr } = await supabaseClient
             .from('members')
@@ -710,23 +713,16 @@
             .in('id', addedMemberIds);
 
           if (memberErr) {
-            console.error('신규 회원 삭제 오류:', memberErr);
-            alert('신규 회원 삭제 실패: ' + memberErr.message);
+            alert("신규 회원 삭제 실패 (Supabase RLS 삭제 권한을 확인해 주세요):\n" + memberErr.message);
             return;
           }
         }
       }
 
-      // 3. 앱 화면(메모리) 상의 배열을 초기 기본 회원 데이터만 남김
-      am8Members = am8Members.filter(m => !m.isGuest && initialDefaultMemberIds.has(m.id));
-
-      // 4. 화면 UI 업데이트
-      renderMemberList(getFilteredMembers());
+      // 3. DB 삭제 성공 후 최신 데이터를 다시 동기화
+      await loadMembersFromDB(false);
       updateCount();
-      updateInviterOptions();
-      setDbStatus(`DB 연결됨 · ${am8Members.length}명`, 'ok');
-
-      alert('초기화가 완료되었습니다. 신규 회원 및 게스트 데이터가 삭제되었습니다.');
+      alert("초기화가 완료되었습니다. 게스트 및 신규 추가 회원 데이터가 완전히 삭제되었습니다.");
     }
 
     function filterMembers() {
