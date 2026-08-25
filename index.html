@@ -6,6 +6,7 @@
   <title>AM8 농구동호회 - 5v5 팀 밸런서</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
   </style>
@@ -95,9 +96,13 @@
           <h1 class="text-base sm:text-xl font-bold flex items-center gap-2">
             <i class="fa-solid fa-basketball text-orange-500"></i> AM8 Team Balancer
           </h1>
-          <p class="text-indigo-200 text-[11px] sm:text-xs mt-0.5">5v5 포지션 / 평균키 / 평균체중 / 평균나이 종합 밸런서</p>
+          <p class="text-indigo-200 text-[11px] sm:text-xs mt-0.5">5v5 포지션 / 평균키 / 평균체중 / 평균출생 종합 밸런서</p>
         </div>
-        <div id="selectedCount" class="bg-indigo-800 px-3 py-1 rounded-lg font-bold text-orange-400 border border-indigo-700 text-xs sm:text-sm">
+        <div class="flex items-center gap-2">
+          <div id="dbStatus" class="bg-indigo-800 px-2 py-1 rounded-lg text-[10px] font-semibold border border-indigo-700">
+            DB 연결 확인 중...
+          </div>
+          <div id="selectedCount" class="bg-indigo-800 px-3 py-1 rounded-lg font-bold text-orange-400 border border-indigo-700 text-xs sm:text-sm">
           선택: 0명
         </div>
       </div>
@@ -114,6 +119,9 @@
           <div class="flex items-center gap-1">
             <button onclick="toggleGuestModal(true)" class="text-[11px] bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-bold px-2 py-0.5 rounded border border-indigo-200 transition">
               + 게스트
+            </button>
+            <button onclick="loadMembersFromDB()" class="text-[11px] bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded border border-emerald-200 transition">
+              ↻ DB 새로고침
             </button>
             <button onclick="selectAll(true)" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-0.5 rounded">전체선택</button>
             <button onclick="selectAll(false)" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-0.5 rounded">초기화</button>
@@ -180,61 +188,93 @@
       { name: 'D팀 (그린)', headerBg: 'bg-emerald-600 text-white', tagBg: 'bg-emerald-500 text-white' }
     ];
 
-    let am8Members = [
-      {"id": 1, "name": "허진영", "position": "핸들러", "height": 175, "weight": 78, "birthYear": 1984, "exempt": false, "isGuest": false},
-      {"id": 2, "name": "이희승", "position": "핸들러", "height": 170, "weight": 88, "birthYear": 1990, "exempt": false, "isGuest": false},
-      {"id": 3, "name": "김건우", "position": "빅맨", "height": 183, "weight": 90, "birthYear": 1977, "exempt": false, "isGuest": false},
-      {"id": 4, "name": "고봉국", "position": "핸들러", "height": 168, "weight": 65, "birthYear": 1983, "exempt": false, "isGuest": false},
-      {"id": 5, "name": "권동우", "position": "윙맨", "height": 182, "weight": 78, "birthYear": 1984, "exempt": false, "isGuest": false},
-      {"id": 6, "name": "김동영", "position": "핸들러", "height": 176, "weight": 75, "birthYear": 1992, "exempt": false, "isGuest": false},
-      {"id": 7, "name": "김무경", "position": "핸들러", "height": 177, "weight": 74, "birthYear": 2006, "exempt": false, "isGuest": false},
-      {"id": 8, "name": "김대영", "position": "빅맨", "height": 182, "weight": 77, "birthYear": 1984, "exempt": false, "isGuest": false},
-      {"id": 9, "name": "김태영", "position": "핸들러", "height": 174, "weight": 75, "birthYear": 1992, "exempt": false, "isGuest": false},
-      {"id": 10, "name": "김형수", "position": "빅맨", "height": 182, "weight": 78, "birthYear": 1990, "exempt": false, "isGuest": false},
-      {"id": 11, "name": "신민호", "position": "핸들러", "height": 172, "weight": 75, "birthYear": 1989, "exempt": false, "isGuest": false},
-      {"id": 12, "name": "배재훈", "position": "윙맨", "height": 180, "weight": 68, "birthYear": 2006, "exempt": false, "isGuest": false},
-      {"id": 13, "name": "임병준", "position": "빅맨", "height": 180, "weight": 88, "birthYear": 1983, "exempt": false, "isGuest": false},
-      {"id": 14, "name": "김봉주", "position": "빅맨", "height": 180, "weight": 90, "birthYear": 1984, "exempt": false, "isGuest": false},
-      {"id": 15, "name": "박상용", "position": "윙맨", "height": 180, "weight": 85, "birthYear": 1987, "exempt": false, "isGuest": false},
-      {"id": 16, "name": "서용민", "position": "빅맨", "height": 182, "weight": 88, "birthYear": 1990, "exempt": false, "isGuest": false},
-      {"id": 17, "name": "송경현", "position": "핸들러", "height": 176, "weight": 80, "birthYear": 1995, "exempt": false, "isGuest": false},
-      {"id": 18, "name": "문수명", "position": "빅맨", "height": 184, "weight": 88, "birthYear": 1984, "exempt": false, "isGuest": false},
-      {"id": 19, "name": "신재현", "position": "핸들러", "height": 172, "weight": 75, "birthYear": 1972, "exempt": false, "isGuest": false},
-      {"id": 20, "name": "안태영", "position": "핸들러", "height": 176, "weight": 80, "birthYear": 2004, "exempt": false, "isGuest": false},
-      {"id": 21, "name": "양재민", "position": "핸들러", "height": 172, "weight": 78, "birthYear": 1990, "exempt": false, "isGuest": false},
-      {"id": 22, "name": "여찬영", "position": "윙맨", "height": 180, "weight": 82, "birthYear": 1990, "exempt": false, "isGuest": false},
-      {"id": 23, "name": "예지성", "position": "빅맨", "height": 185, "weight": 85, "birthYear": 2002, "exempt": false, "isGuest": false},
-      {"id": 24, "name": "권오성", "position": "핸들러", "height": 176, "weight": 80, "birthYear": 1974, "exempt": false, "isGuest": false},
-      {"id": 25, "name": "이용빈", "position": "빅맨", "height": 180, "weight": 110, "birthYear": 1990, "exempt": false, "isGuest": false},
-      {"id": 26, "name": "원효섭", "position": "윙맨", "height": 177, "weight": 83, "birthYear": 1990, "exempt": false, "isGuest": false},
-      {"id": 27, "name": "유택상", "position": "빅맨", "height": 182, "weight": 88, "birthYear": 1976, "exempt": false, "isGuest": false},
-      {"id": 28, "name": "이대명", "position": "빅맨", "height": 183, "weight": 88, "birthYear": 1991, "exempt": false, "isGuest": false},
-      {"id": 29, "name": "김윤환", "position": "윙맨", "height": 180, "weight": 80, "birthYear": 1984, "exempt": false, "isGuest": false},
-      {"id": 30, "name": "장주현", "position": "핸들러", "height": 175, "weight": 85, "birthYear": 1981, "exempt": false, "isGuest": false},
-      {"id": 31, "name": "최승도", "position": "윙맨", "height": 177, "weight": 90, "birthYear": 1983, "exempt": false, "isGuest": false},
-      {"id": 32, "name": "윤한결", "position": "핸들러", "height": 175, "weight": 72, "birthYear": 1989, "exempt": false, "isGuest": false},
-      {"id": 33, "name": "김한석", "position": "핸들러", "height": 172, "weight": 75, "birthYear": 1974, "exempt": false, "isGuest": false},
-      {"id": 34, "name": "황도균", "position": "핸들러", "height": 168, "weight": 65, "birthYear": 1977, "exempt": false, "isGuest": false},
-      {"id": 35, "name": "황현준", "position": "핸들러", "height": 176, "weight": 75, "birthYear": 1990, "exempt": false, "isGuest": false},
-      {"id": 36, "name": "박창수", "position": "핸들러", "height": 174, "weight": 80, "birthYear": 1977, "exempt": false, "isGuest": false},
-      {"id": 37, "name": "연시은", "position": "핸들러", "height": 173, "weight": 78, "birthYear": 1985, "exempt": false, "isGuest": false},
-      {"id": 38, "name": "이대엽", "position": "빅맨", "height": 182, "weight": 78, "birthYear": 1984, "exempt": false, "isGuest": false},
-      {"id": 39, "name": "정진우", "position": "빅맨", "height": 182, "weight": 80, "birthYear": 1995, "exempt": false, "isGuest": false},
-      {"id": 40, "name": "홍성돈", "position": "핸들러", "height": 176, "weight": 74, "birthYear": 1995, "exempt": false, "isGuest": false},
-      {"id": 41, "name": "김정습", "position": "윙맨", "height": 176, "weight": 78, "birthYear": 1979, "exempt": false, "isGuest": false},
-      {"id": 42, "name": "전일우", "position": "핸들러", "height": 175, "weight": 72, "birthYear": 1983, "exempt": false, "isGuest": false},
-      {"id": 43, "name": "허재우", "position": "빅맨", "height": 183, "weight": 80, "birthYear": 1983, "exempt": false, "isGuest": false}
-    ];
+    // ============================================================
+    // Supabase 설정
+    // 1) Supabase 프로젝트 생성 후 Project URL / anon key를 입력하세요.
+    // 2) 아래 두 값은 Supabase의 Project Settings > API에서 확인합니다.
+    // ============================================================
+    const SUPABASE_URL = '여기에_프로젝트_URL_입력';
+    const SUPABASE_ANON_KEY = '여기에_anon_public_key_입력';
+
+    let supabaseClient = null;
+
+    // DB에서 불러온 회원/게스트가 들어가는 배열
+    let am8Members = [];
 
     let selectedPlayerIds = new Set();
     let currentGeneratedTeams = [];
     let guestCounter = 1000;
 
-    window.onload = () => {
-      am8Members.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+    window.onload = async () => {
+      try {
+        if (
+          SUPABASE_URL.includes('여기에_') ||
+          SUPABASE_ANON_KEY.includes('여기에_')
+        ) {
+          setDbStatus('Supabase 설정 필요', 'warn');
+          alert('Supabase 설정이 아직 입력되지 않았습니다.\nHTML 파일 상단의 SUPABASE_URL과 SUPABASE_ANON_KEY를 입력해 주세요.');
+          return;
+        }
+
+        supabaseClient = window.supabase.createClient(
+          SUPABASE_URL,
+          SUPABASE_ANON_KEY
+        );
+
+        await loadMembersFromDB();
+      } catch (error) {
+        console.error(error);
+        setDbStatus('DB 연결 실패', 'error');
+        alert('Supabase 연결에 실패했습니다.\n브라우저 개발자도구(F12)의 Console에서 오류를 확인해 주세요.');
+      }
+    };
+
+    function setDbStatus(text, type = 'ok') {
+      const el = document.getElementById('dbStatus');
+      if (!el) return;
+      el.innerText = text;
+      el.className =
+        'px-2 py-1 rounded-lg text-[10px] font-semibold border ' +
+        (type === 'ok'
+          ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+          : type === 'warn'
+          ? 'bg-amber-100 text-amber-700 border-amber-200'
+          : 'bg-red-100 text-red-700 border-red-200');
+    }
+
+    // Supabase members 테이블에서 회원/게스트 전체를 가져옵니다.
+    async function loadMembersFromDB() {
+      if (!supabaseClient) return;
+
+      const { data, error } = await supabaseClient
+        .from('members')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+
+      am8Members = (data || []).map(m => ({
+        id: m.id,
+        name: m.name,
+        position: m.position,
+        height: m.height,
+        weight: m.weight,
+        birthYear: m.birth_year,
+        exempt: m.exempt ?? false,
+        isGuest: m.is_guest ?? false,
+        inviterId: m.inviter_id ?? null,
+        inviterName: m.inviter_name ?? null
+      }));
+
+      guestCounter = Math.max(
+        1000,
+        ...am8Members.map(m => Number(m.id) || 0) + 1
+      );
+
       updateInviterOptions();
       renderMemberList(am8Members);
-    };
+      setDbStatus(`DB 연결됨 · ${am8Members.length}명`, 'ok');
+    }
 
     function updateInviterOptions() {
       const inviterSelect = document.getElementById('gInviter');
@@ -252,8 +292,14 @@
       }
     }
 
-    function handleAddGuest(e) {
+    async function handleAddGuest(e) {
       e.preventDefault();
+
+      if (!supabaseClient) {
+        alert('DB가 연결되지 않았습니다.');
+        return;
+      }
+
       const name = document.getElementById('gName').value.trim();
       const inviterIdVal = document.getElementById('gInviter').value;
       const inviterId = inviterIdVal ? parseInt(inviterIdVal) : null;
@@ -264,17 +310,39 @@
       const weight = parseInt(document.getElementById('gWeight').value);
       const birthYear = parseInt(document.getElementById('gBirth').value);
 
+      const { data, error } = await supabaseClient
+        .from('members')
+        .insert({
+          name,
+          position,
+          height,
+          weight,
+          birth_year: birthYear,
+          exempt: false,
+          is_guest: true,
+          inviter_id: inviterId,
+          inviter_name: inviterObj ? inviterObj.name : null
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error(error);
+        alert('게스트 저장에 실패했습니다.\n' + error.message);
+        return;
+      }
+
       const guestObj = {
-        id: guestCounter++,
-        name: name,
-        position: position,
-        height: height,
-        weight: weight,
-        birthYear: birthYear,
-        exempt: false,
-        isGuest: true,
-        inviterId: inviterId,
-        inviterName: inviterObj ? inviterObj.name : null
+        id: data.id,
+        name: data.name,
+        position: data.position,
+        height: data.height,
+        weight: data.weight,
+        birthYear: data.birth_year,
+        exempt: data.exempt ?? false,
+        isGuest: data.is_guest ?? true,
+        inviterId: data.inviter_id ?? null,
+        inviterName: data.inviter_name ?? null
       };
 
       am8Members.unshift(guestObj);
@@ -292,6 +360,8 @@
       toggleGuestModal(false);
 
       renderMemberList(getFilteredMembers());
+      setDbStatus(`DB 연결됨 · ${am8Members.length}명`, 'ok');
+      alert(`${name} 게스트가 DB에 저장되었습니다.`);
     }
 
     function renderMemberList(members) {
@@ -338,11 +408,24 @@
       renderMemberList(getFilteredMembers());
     }
 
-    function toggleExempt(id) {
+    async function toggleExempt(id) {
       const member = am8Members.find(m => m.id === id);
-      if (member) {
-        member.exempt = !member.exempt;
+      if (!member || !supabaseClient) return;
+
+      const newValue = !member.exempt;
+
+      const { error } = await supabaseClient
+        .from('members')
+        .update({ exempt: newValue })
+        .eq('id', id);
+
+      if (error) {
+        console.error(error);
+        alert('면제 상태 저장에 실패했습니다.\n' + error.message);
+        return;
       }
+
+      member.exempt = newValue;
       renderMemberList(getFilteredMembers());
     }
 
@@ -484,24 +567,18 @@
     function calculateCost(teams) {
       const avgHeights = teams.map(t => getAvg(t.players, 'height'));
       const avgWeights = teams.map(t => getAvg(t.players, 'weight'));
-      const avgAges = teams.map(t => getAvgAge(t.players));
+      const avgBirthYears = teams.map(t => getAvg(t.players, 'birthYear'));
 
       const heightStdDev = getStdDev(avgHeights);
       const weightStdDev = getStdDev(avgWeights);
-      const ageStdDev = getStdDev(avgAges);
+      const birthYearStdDev = getStdDev(avgBirthYears);
 
-      return (heightStdDev * 2) + weightStdDev + (ageStdDev * 1.5);
+      return (heightStdDev * 2) + weightStdDev + (birthYearStdDev * 1.5);
     }
 
     function getAvg(arr, prop) {
       if (arr.length === 0) return 0;
       return arr.reduce((acc, cur) => acc + cur[prop], 0) / arr.length;
-    }
-
-    function getAvgAge(arr) {
-      if (arr.length === 0) return 0;
-      const currentYear = new Date().getFullYear();
-      return arr.reduce((acc, cur) => acc + (currentYear - cur.birthYear + 1), 0) / arr.length;
     }
 
     function getStdDev(arr) {
@@ -514,7 +591,7 @@
       container.innerHTML = teams.map(t => {
         const avgH = getAvg(t.players, 'height').toFixed(1);
         const avgW = getAvg(t.players, 'weight').toFixed(1);
-        const avgAge = getAvgAge(t.players).toFixed(1);
+        const avgYear = getAvg(t.players, 'birthYear').toFixed(1);
 
         const hCount = t.players.filter(p => p.position === '핸들러').length;
         const wCount = t.players.filter(p => p.position === '윙맨').length;
@@ -531,7 +608,7 @@
               <div class="text-[10px] space-x-1 opacity-90 mt-0.5">
                 <span>평균키 <strong>${avgH}</strong></span>
                 <span>/ 평균체중 <strong>${avgW}</strong></span>
-                <span>/ 평균나이 <strong>${avgAge}세</strong></span>
+                <span>/ 평균출생 <strong>${avgYear}</strong></span>
               </div>
             </div>
 
@@ -577,9 +654,9 @@
       currentGeneratedTeams.forEach(t => {
         const avgH = getAvg(t.players, 'height').toFixed(1);
         const avgW = getAvg(t.players, 'weight').toFixed(1);
-        const avgAge = getAvgAge(t.players).toFixed(1);
+        const avgYear = getAvg(t.players, 'birthYear').toFixed(1);
 
-        text += `[ ${t.name} ] (${t.players.length}명 / 평균키 ${avgH}cm / 평균체중 ${avgW}kg / 평균나이 ${avgAge}세)\n`;
+        text += `[ ${t.name} ] (${t.players.length}명 / 평균키 ${avgH}cm / 평균체중 ${avgW}kg / 평균출생 ${avgYear}년생)\n`;
         t.players.forEach(p => {
           const guestTag = p.inviterName ? `(게스트 - ${p.inviterName} 동반) ` : (p.isGuest ? '(게스트) ' : '');
           const exemptText = p.exempt ? ' [☕커피내기 면제]' : '';
@@ -594,6 +671,12 @@
         alert("복사에 실패했습니다.");
       });
     }
+    // ============================================================
+    // 참고:
+    // - 팀 생성 자체는 기존 코드 그대로 브라우저에서 실행됩니다.
+    // - 회원/게스트 정보는 Supabase members 테이블에서 읽고 저장합니다.
+    // - 다음 단계에서 참석 기록/팀 편성 기록도 별도 테이블로 확장할 수 있습니다.
+    // ============================================================
   </script>
 </body>
 </html>
