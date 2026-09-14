@@ -199,7 +199,22 @@
         <input type="text" id="searchInput" oninput="filterMembers()" placeholder="이름 검색..." 
                class="w-full px-3 py-1.5 mb-2 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
 
-        <div id="memberList" class="space-y-1 max-h-[380px] lg:max-h-[500px] overflow-y-auto pr-1">
+        <!-- 활동 회원 목록 -->
+        <div id="memberList" class="space-y-1 max-h-[300px] lg:max-h-[380px] overflow-y-auto pr-1">
+        </div>
+
+        <!-- 휴회원 섹션 -->
+        <div class="mt-4 pt-3 border-t border-slate-200">
+          <button onclick="toggleInactiveSection()" class="w-full flex justify-between items-center text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg transition">
+            <span class="flex items-center gap-1.5">
+              <i class="fa-solid fa-user-slash text-slate-400"></i> 휴회원 (임시탈퇴)
+              <span id="inactiveCount" class="bg-slate-200 text-slate-700 text-[10px] px-1.5 py-0.2 rounded-full">0명</span>
+            </span>
+            <i id="inactiveChevron" class="fa-solid fa-chevron-down text-slate-400 transition-transform"></i>
+          </button>
+          
+          <div id="inactiveList" class="space-y-1 mt-2 max-h-[180px] overflow-y-auto pr-1 hidden">
+          </div>
         </div>
 
         <button onclick="generateTeams()" class="w-full mt-3 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-lg shadow transition duration-200 flex items-center justify-center gap-2 text-sm sm:text-base">
@@ -268,7 +283,7 @@
 
     let supabaseClient = null;
     let am8Members = [];
-    let initialDefaultMemberIds = new Set(); // 최초 연결 시 기본 정회원 ID 보존용
+    let initialDefaultMemberIds = new Set();
     let selectedPlayerIds = new Set();
     let currentGeneratedTeams = [];
 
@@ -288,7 +303,7 @@
           SUPABASE_ANON_KEY
         );
 
-        await loadMembersFromDB(true); // 첫 로딩 시 기본 멤버 기준값 세팅
+        await loadMembersFromDB(true);
         await loadLatestSavedTeams();
       } catch (error) {
         console.error(error);
@@ -333,11 +348,11 @@
         birthYear: m.birth_year,
         exempt: m.exempt ?? false,
         isGuest: m.is_guest ?? false,
+        isInactive: m.is_inactive ?? false,
         inviterId: m.inviter_id ?? null,
         inviterName: m.inviter_name ?? null
       }));
 
-      // 앱 최초 접속(초기 로딩) 시 게스트가 아닌 정회원 목록을 기준 데이터로 보존
       if (isInitial) {
         initialDefaultMemberIds.clear();
         am8Members.filter(m => !m.isGuest).forEach(m => initialDefaultMemberIds.add(m.id));
@@ -346,6 +361,18 @@
       updateInviterOptions();
       renderMemberList(am8Members);
       setDbStatus(`DB 연결됨 · ${am8Members.length}명`, 'ok');
+    }
+
+    function toggleInactiveSection() {
+      const list = document.getElementById('inactiveList');
+      const chevron = document.getElementById('inactiveChevron');
+      if (list.classList.contains('hidden')) {
+        list.classList.remove('hidden');
+        chevron.classList.add('rotate-180');
+      } else {
+        list.classList.add('hidden');
+        chevron.classList.remove('rotate-180');
+      }
     }
 
     /* --- 신규 정회원 추가 기능 --- */
@@ -371,7 +398,8 @@
           name, position, height, weight,
           birth_year: birthYear,
           exempt: false,
-          is_guest: false
+          is_guest: false,
+          is_inactive: false
         })
         .select()
         .single();
@@ -388,9 +416,39 @@
       await loadMembersFromDB(false);
     }
 
-    /* --- 회원 삭제 기능 (수정됨) --- */
+    /* --- 휴회 상태 토글 (임시탈퇴 처리) --- */
+    async function toggleInactive(id, name) {
+      const member = am8Members.find(m => m.id === id);
+      if (!member || !supabaseClient) return;
+
+      const newStatus = !member.isInactive;
+      const confirmMsg = newStatus 
+        ? `'${name}' 회원을 휴회원(임시탈퇴) 목록으로 이동하시겠습니까?`
+        : `'${name}' 회원을 정회원(활동) 목록으로 복귀시키시겠습니까?`;
+
+      if (!confirm(confirmMsg)) return;
+
+      const { error } = await supabaseClient
+        .from('members')
+        .update({ is_inactive: newStatus })
+        .eq('id', id);
+
+      if (error) {
+        console.error(error);
+        alert('휴회 상태 변경 실패: ' + error.message);
+        return;
+      }
+
+      member.isInactive = newStatus;
+      if (newStatus) {
+        selectedPlayerIds.delete(id); // 휴회 전환 시 선택 해제
+      }
+      renderMemberList(getFilteredMembers());
+    }
+
+    /* --- 회원 삭제 기능 --- */
     async function deleteMember(id, name) {
-      if (!confirm(`'${name}' 님을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`)) {
+      if (!confirm(`'${name}' 님을 영구 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`)) {
         return;
       }
 
@@ -399,7 +457,6 @@
         return;
       }
 
-      // .select()를 붙여 실제 삭제된 레코드가 있는지 검증
       const { data, error } = await supabaseClient
         .from('members')
         .delete()
@@ -417,7 +474,6 @@
         return;
       }
 
-      // DB 삭제 검증이 통과한 경우에만 로컬 데이터 업데이트 및 다시 동기화
       selectedPlayerIds.delete(id);
       initialDefaultMemberIds.delete(id);
       await loadMembersFromDB(false);
@@ -525,7 +581,7 @@
     function updateInviterOptions() {
       const inviterSelect = document.getElementById('gInviter');
       inviterSelect.innerHTML = '<option value="">없음 (독립 배치)</option>' + 
-        am8Members.filter(m => !m.isGuest).map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+        am8Members.filter(m => !m.isGuest && !m.isInactive).map(m => `<option value="${m.id}">${m.name}</option>`).join('');
     }
 
     function toggleGuestModal(show) {
@@ -566,6 +622,7 @@
           birth_year: birthYear,
           exempt: false,
           is_guest: true,
+          is_inactive: false,
           inviter_id: inviterId,
           inviter_name: inviterObj ? inviterObj.name : null
         })
@@ -594,8 +651,17 @@
     }
 
     function renderMemberList(members) {
-      const container = document.getElementById('memberList');
-      container.innerHTML = members.map(m => {
+      const activeContainer = document.getElementById('memberList');
+      const inactiveContainer = document.getElementById('inactiveList');
+      const inactiveCountEl = document.getElementById('inactiveCount');
+
+      const activeMembers = members.filter(m => !m.isInactive);
+      const inactiveMembers = members.filter(m => m.isInactive);
+
+      inactiveCountEl.innerText = `${inactiveMembers.length}명`;
+
+      // 1. 활동 회원 렌더링
+      activeContainer.innerHTML = activeMembers.map(m => {
         const isChecked = selectedPlayerIds.has(m.id);
         const posColor = m.position === '빅맨' ? 'bg-red-100 text-red-700' :
                          m.position === '핸들러' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700';
@@ -614,12 +680,14 @@
               <span class="font-bold text-slate-800 text-xs truncate shrink-0">${m.name}</span>
               ${inviterTag}
               <span class="text-[10px] ${posColor} px-1 py-0.2 rounded font-semibold shrink-0 whitespace-nowrap">${m.position}</span>
-              <span class="text-[10px] text-slate-400 truncate hidden sm:inline ml-0.5">${m.height}cm/${m.weight}kg</span>
             </label>
             
             <div class="flex items-center gap-1 shrink-0 ml-1">
               <button onclick="toggleExempt(${m.id})" class="text-[10px] px-1.5 py-0.5 rounded border transition whitespace-nowrap ${exemptBtnClass}">
                 ${m.exempt ? '☕면제' : '내기'}
+              </button>
+              <button onclick="toggleInactive(${m.id}, '${m.name}')" title="휴회로 전환" class="text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded border border-amber-200 transition whitespace-nowrap">
+                🏖️휴회
               </button>
               <button onclick="deleteMember(${m.id}, '${m.name}')" title="삭제" class="text-[10px] bg-rose-50 hover:bg-rose-100 text-rose-600 px-1.5 py-0.5 rounded border border-rose-200 transition whitespace-nowrap">
                 ✕
@@ -628,6 +696,30 @@
           </div>
         `;
       }).join('');
+
+      // 2. 휴회원 렌더링
+      if (inactiveMembers.length === 0) {
+        inactiveContainer.innerHTML = '<p class="text-center text-slate-400 py-3 text-[11px]">휴회중인 회원이 없습니다.</p>';
+      } else {
+        inactiveContainer.innerHTML = inactiveMembers.map(m => `
+          <div class="flex items-center justify-between p-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-500">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span class="font-bold text-xs truncate">${m.name}</span>
+              <span class="text-[10px] bg-slate-200 text-slate-600 px-1 py-0.2 rounded font-semibold whitespace-nowrap">${m.position}</span>
+            </div>
+            
+            <div class="flex items-center gap-1 shrink-0">
+              <button onclick="toggleInactive(${m.id}, '${m.name}')" class="text-[10px] bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded border border-emerald-200 transition whitespace-nowrap">
+                ↺ 복귀
+              </button>
+              <button onclick="deleteMember(${m.id}, '${m.name}')" title="삭제" class="text-[10px] bg-rose-50 hover:bg-rose-100 text-rose-600 px-1.5 py-0.5 rounded border border-rose-200 transition whitespace-nowrap">
+                ✕
+              </button>
+            </div>
+          </div>
+        `).join('');
+      }
+
       updateCount();
     }
 
@@ -663,14 +755,13 @@
 
     function selectAll(select) {
       if (select) {
-        am8Members.forEach(m => selectedPlayerIds.add(m.id));
+        am8Members.filter(m => !m.isInactive).forEach(m => selectedPlayerIds.add(m.id));
       } else {
         selectedPlayerIds.clear();
       }
       renderMemberList(getFilteredMembers());
     }
 
-    /* --- [전체 초기화 기능 (수정됨)] --- */
     async function resetAllSelections() {
       if (!confirm("선택을 해제하고, 게스트 및 신규 추가된 회원을 DB에서 완전히 삭제하시겠습니까?")) {
         return;
@@ -679,7 +770,6 @@
       selectedPlayerIds.clear();
 
       if (supabaseClient) {
-        // 1. 게스트 DB 삭제 검증
         const { data: guestData, error: guestErr } = await supabaseClient
           .from('members')
           .delete()
@@ -691,7 +781,6 @@
           return;
         }
 
-        // 2. 신규 정회원 DB 삭제 검증
         const addedMemberIds = am8Members
           .filter(m => !m.isGuest && !initialDefaultMemberIds.has(m.id))
           .map(m => m.id);
@@ -710,7 +799,6 @@
         }
       }
 
-      // 3. DB 삭제 성공 완료 후 전체 데이터를 다시 불러옴
       await loadMembersFromDB(false);
       updateCount();
       alert("초기화가 완료되었습니다. 신규 회원 및 게스트 데이터가 DB에서 완전히 삭제되었습니다.");
@@ -730,7 +818,7 @@
     }
 
     function generateTeams() {
-      const selectedPlayers = am8Members.filter(m => selectedPlayerIds.has(m.id));
+      const selectedPlayers = am8Members.filter(m => selectedPlayerIds.has(m.id) && !m.isInactive);
       
       if (selectedPlayers.length < 4) {
         alert("최소 4명 이상의 참석자를 선택해 주세요.");
