@@ -196,6 +196,19 @@
           </div>
         </div>
 
+        <!-- 전체 참여자 리스트 커피면제 현황 요약 바 -->
+        <div class="flex items-center justify-between bg-amber-50/60 border border-amber-200 rounded-lg px-3 py-1.5 mb-2 text-xs font-semibold">
+          <div class="flex items-center gap-1.5 text-amber-800">
+            <i class="fa-solid fa-mug-hot text-amber-600"></i>
+            <span>전체 커피면제 회원:</span>
+          </div>
+          <div>
+            <span class="bg-amber-100 text-amber-800 border border-amber-300 px-2.5 py-0.5 rounded-full font-extrabold text-[11px]">
+              ☕ <strong id="exemptCount">0</strong>명
+            </span>
+          </div>
+        </div>
+
         <input type="text" id="searchInput" oninput="filterMembers()" placeholder="이름 검색..." 
                class="w-full px-3 py-1.5 mb-2 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
 
@@ -441,7 +454,7 @@
 
       member.isInactive = newStatus;
       if (newStatus) {
-        selectedPlayerIds.delete(id); // 휴회 전환 시 선택 해제
+        selectedPlayerIds.delete(id);
       }
       renderMemberList(getFilteredMembers());
     }
@@ -686,8 +699,8 @@
               <button onclick="toggleExempt(${m.id})" class="text-[10px] px-1.5 py-0.5 rounded border transition whitespace-nowrap ${exemptBtnClass}">
                 ${m.exempt ? '☕면제' : '내기'}
               </button>
-              <button onclick="toggleInactive(${m.id}, '${m.name}')" title="휴회로 전환" class="text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded border border-amber-200 transition whitespace-nowrap">
-                🏖️휴회
+              <button onclick="toggleInactive(${m.id}, '${m.name}')" title="휴회원으로 전환" class="text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded border border-amber-200 transition whitespace-nowrap">
+                🏖️휴회원
               </button>
               <button onclick="deleteMember(${m.id}, '${m.name}')" title="삭제" class="text-[10px] bg-rose-50 hover:bg-rose-100 text-rose-600 px-1.5 py-0.5 rounded border border-rose-200 transition whitespace-nowrap">
                 ✕
@@ -814,7 +827,17 @@
     }
 
     function updateCount() {
-      document.getElementById('selectedCount').innerText = `선택: ${selectedPlayerIds.size}명`;
+      // 1. 체크박스로 선택된 인원 계산
+      const selectedMembers = am8Members.filter(m => selectedPlayerIds.has(m.id) && !m.isInactive);
+      document.getElementById('selectedCount').innerText = `선택: ${selectedMembers.length}명`;
+
+      // 2. 전체 활동 회원 중 커피 면제 인원 계산
+      const activeMembers = am8Members.filter(m => !m.isInactive);
+      const exemptCount = activeMembers.filter(m => m.exempt).length;
+
+      // 면제 카운트 UI 업데이트
+      const exemptEl = document.getElementById('exemptCount');
+      if (exemptEl) exemptEl.innerText = exemptCount;
     }
 
     function generateTeams() {
@@ -995,10 +1018,8 @@
                 return `
                   <li class="pt-1 flex justify-between items-center text-xs">
                     <div class="flex items-center gap-1.5 min-w-0">
-                      <span class="font-bold text-slate-800 shrink-0">${p.name}</span>
-                      ${guestBadge}
-                      <span class="text-[10px] ${badge} px-1 py-0.2 rounded font-semibold shrink-0 whitespace-nowrap">${p.position}</span>
-                      ${p.exempt ? '<span class="text-[9px] bg-amber-100 text-amber-800 px-1 py-0.2 rounded font-semibold shrink-0 whitespace-nowrap">☕면제</span>' : ''}
+                      <span class="font-bold text-slate-800 shrink-0">${p.name}</span>${guestBadge}
+                      <span class="text-[10px] ${badge} px-1 py-0.2 rounded font-semibold shrink-0 whitespace-nowrap">${p.position}</span>${p.exempt ? '<span class="text-[9px] bg-amber-100 text-amber-800 px-1 py-0.2 rounded font-semibold shrink-0 whitespace-nowrap">☕면제</span>' : ''}
                     </div>
                   </li>
                 `;
